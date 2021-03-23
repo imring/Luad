@@ -1,0 +1,8 @@
+﻿---
+BasedOnStyle: LLVM
+AlignEscapedNewlines: Left
+AlwaysBreakTemplateDeclarations: 'Yes'
+SpaceBeforeRangeBasedForLoopColon: 'false'
+UseTab: Never
+
+...
