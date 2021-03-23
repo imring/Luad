@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(luad VERSION 1.0
+project(luad VERSION 0.10
         DESCRIPTION "Disassembly Lua compiled scripts"
         LANGUAGES CXX C)
 
