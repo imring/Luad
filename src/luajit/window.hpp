@@ -23,20 +23,23 @@
 
 #include "wininterface.hpp"
 
+#include "bclist.hpp"
+
 namespace luad::lj {
 class window : public wininterface {
 public:
-  window(const std::filesystem::path &p) : wininterface(p), prototype_n(0) {
+  window(const std::filesystem::path &p) : wininterface(p), prototype_n(0), bc(info()) {
     add_info();
   }
-  window(luac_file &file) : wininterface(file), prototype_n(0) { add_info(); }
+  window(luac_file &file) : wininterface(file), prototype_n(0), bc(info()) { add_info(); }
   ~window() {}
 
   void add_info();
-  // void render();
+  void render_left_panel();
 
 protected:
   dislua::uint prototype_n;
+  bclist bc;
 
 private:
   static void render_lj_information(wininterface *win);

@@ -15,6 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include "main.hpp"
 #include "wininterface.hpp"
 
@@ -24,10 +28,26 @@
 
 #include "fmt/os.h"
 
+#ifdef _WIN32
+std::string from_widechar(std::wstring_view s) {
+  int size_needed = WideCharToMultiByte(
+      CP_UTF8, 0, s.data(), static_cast<int>(s.size()), NULL, 0, NULL, NULL);
+  std::string result(size_needed, '\0');
+  WideCharToMultiByte(CP_UTF8, 0, s.data(), static_cast<int>(s.size()),
+                      result.data(), size_needed, NULL, NULL);
+  return result;
+}
+#endif
+
 bool luad::wininterface::initialize() {
-  std::string name_window;
-  fmt::format_to(std::back_inserter(name_window), "Luad {}",
-                 path().filename().string());
+#ifdef _WIN32
+  std::wstring filename = path().filename().wstring();
+  std::wstring wname_window = fmt::format(L"Luad {}", filename);
+  std::string name_window = from_widechar(wname_window);
+#else
+  std::string filename = path().filename().string();
+  std::string name_window = fmt::format("Luad {}", filename);
+#endif
   win = glfwCreateWindow(800, 600, name_window.c_str(), nullptr, nullptr);
   if (win == nullptr) {
     std::cerr << "Failed to create GLFW window." << std::endl;
@@ -42,10 +62,13 @@ bool luad::wininterface::initialize() {
   static const ImWchar ranges[] = {0x0020, 0x00FF, 0x0400, 0x052F,
                                    0x2DE0, 0x2DFF, 0xA640, 0xA69F,
                                    0x2013, 0x2122, 0};
-  io.Fonts->AddFontFromFileTTF("./fonts/LiberationMono-Regular.ttf", 13.f,
-                               nullptr, ranges);
-  fonts["bold16"] = io.Fonts->AddFontFromFileTTF(
-      "./fonts/LiberationMono-Bold.ttf", 16.f, nullptr, ranges);
+  ImFont *font = io.Fonts->AddFontFromFileTTF(
+      "./fonts/LiberationMono-Regular.ttf", 13.f, nullptr, ranges);
+  if (font == nullptr) {
+    std::cerr << "Failed to load the font in the path \"./fonts/LiberationMono-Regular.ttf\"." << std::endl;
+    return false;
+  }
+
   io.Fonts->Build();
   return true;
 }
@@ -116,6 +139,13 @@ void luad::wininterface::render() {
   size_t di_size = decompilers_info.size();
   size_t pi_size = plugins_info.size();
 
+  ImGui::Columns(2);
+  ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() / 5);
+  ImGui::BeginChild("##left");
+  render_left_panel();
+  ImGui::EndChild();
+
+  ImGui::NextColumn();
   if (ImGui::BeginTabBar("##menu")) {
     // decompilers info
     for (size_t i = 0; i < di_size; ++i)
@@ -133,6 +163,7 @@ void luad::wininterface::render() {
 
     ImGui::EndTabBar();
   }
+  ImGui::Columns(1);
 
   ImGui::End();
 }

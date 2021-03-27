@@ -1,25 +1,26 @@
 # Luad
-<p align="center"><img src="./assets/screen.png" height="500px" /></p>
+English | [Русский](README-RU.md)
+<p align="center"><img src="./assets/v0.11.png" /></p>
 
 [![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)
 [![Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://opensource.org/licenses/GPL-3.0)
 
 Luad - Disassembler for compiled Lua scripts.  
-At the moment the program is in development (v0.10-pre-alpha).
+At the moment the program is in development (v0.11-pre-alpha).
 
 Supported compilers:
 - [LuaJIT](http://luajit.org/) v1 & v2.
 
-## Dependencies
+## Build
+Dependencies:
 - [GLFW](https://github.com/glfw/glfw);
 - [gl3w](https://github.com/skaslev/gl3w);
-- [Dear ImGui](https://github.com/ocornut/imgui) (has in a path `deps`);
-- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) (has in a path `deps`);
+- [Dear ImGui](https://github.com/ocornut/imgui) (git submodule);
+- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) (git submodule);
 - [{fmt}](https://github.com/fmtlib/fmt);
 - [DisLua C++ (disluapp)](https://github.com/imring/disluapp).
 
-## Build
 ```bash
 $ git clone --recursive https://github.com/imring/luad
 $ cd luad
@@ -34,12 +35,13 @@ Open the terminal and use the command:
 ```bash
 ./luad [file]
 ```
+Make sure there is a `fonts` folder with fonts of [Liberation](https://github.com/liberationfonts/liberation-fonts).
 
 ## TODO
-- Graph view;
+- Graph view (e.g. [IDA](https://www.hex-rays.com/products/ida/tech/graphing/));
 - View decompiled code;
 - Writing your own Lua plugins;
-- Rewrite the information;
+- Rewrite the information.
 
 ## License
 Luad is licensed under the [GNU General Public License v3.0](https://opensource.org/licenses/GPL-3.0).

@@ -65,12 +65,12 @@ std::string tostring_proto_flags(dislua::dump_info::proto &p) {
 std::string fix_string(std::string &str) {
   std::string res = "\"";
   size_t newline = 0;
+  
   for (char &c: str) {
-    if (newline == 50) {
+    if (res.size() - newline > 50) {
       res += "\"\n.. \"";
-      newline = 0;
+      newline = res.size();
     }
-    ++newline;
 
     if (c == '\a')
       res.append("\\a");
@@ -139,23 +139,24 @@ std::string table_tostring(dislua::dump_info::table_t &t) {
   dislua::leb128 i = 1;
   decltype(copy_table)::iterator it;
   while (it = copy_table.find(i++), it != copy_table.end()) {
-    res += table_kv_tostring(it->second) + ", ";
     if (res.size() - newline > 50) {
-      newline = res.size();
       res += "\n";
+      newline = res.size();
     }
+    res += table_kv_tostring(it->second) + ", ";
     copy_table.erase(it->first);
   }
 
   for (auto &kv: copy_table) {
     if (kv.second.index() == 0)
       continue;
+    
+    if (res.size() - newline > 50) {
+      res += "\n";
+      newline = res.size();
+    }
     fmt::format_to(std::back_inserter(res), "[{}] = {}, ",
                    table_kv_tostring(kv.first), table_kv_tostring(kv.second));
-    if (res.size() - newline > 50) {
-      newline = res.size();
-      res += "\n";
-    }
   }
 
   if (!res.empty())

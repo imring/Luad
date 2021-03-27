@@ -51,8 +51,9 @@ int main(int argc, char *argv[]) {
     std::cout << "USAGE: luad [file]" << std::endl;
     return 0;
   }
+  std::filesystem::path p = argv[1];
 
-  luad::luac_file main_file(argv[1]);
+  luad::luac_file main_file(p);
   switch (main_file.error()) {
   case luad::luac_file::LFE_IS_FILE:
     std::cerr << "The path isn't a file or a file doesn't exist." << std::endl;

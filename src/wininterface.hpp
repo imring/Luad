@@ -43,6 +43,7 @@ public:
   virtual ~wininterface() {}
 
   bool initialize();
+  void render();
   inline ImFont *get_font(const std::string &v) { return fonts[v]; }
   ImVec2 get_window_size();
 
@@ -60,7 +61,7 @@ public:
   }
   inline void swap_buffers() { glfwSwapBuffers(win); }
 
-  virtual void render();
+  virtual void render_left_panel(){}
 
   TextEditor editor;
 
