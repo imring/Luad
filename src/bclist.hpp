@@ -24,22 +24,25 @@
 
 class bclist {
 public:
+  bclist() = default;
   bclist(dislua::dump_info *i) : info(i) { update(); }
+  virtual ~bclist(){}
 
   struct div {
     std::string header, lines, footer;
     std::vector<div> additional;
   };
 
-  std::string full();
-  void update();
+  inline std::string full() { return full_str; }
+  virtual void update(){}
 
   std::vector<div> divs;
   dislua::dump_info *info;
 
-private:
-  std::string lj_full();
-  void lj_update();
+  static bclist get_list(dislua::dump_info *info);
+
+protected:
+  std::string full_str;
 };
 
 #endif // BCLIST_H

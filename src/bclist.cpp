@@ -17,13 +17,10 @@
 
 #include "bclist.hpp"
 
-std::string bclist::full() {
-  if (info->compiler() == dislua::DISLUA_LUAJIT)
-    return lj_full();
-  return "";
-}
+#include "bclist/lj.hpp"
 
-void bclist::update() {
+bclist bclist::get_list(dislua::dump_info *info) {
   if (info->compiler() == dislua::DISLUA_LUAJIT)
-    lj_update();
+    return bclist_lj(info);
+  return bclist(info);
 }

@@ -15,29 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_LUAJIT_WINDOW_H
-#define LUAD_LUAJIT_WINDOW_H
-
-#include <filesystem>
-#include <iostream>
-
-#include "wininterface.hpp"
+#ifndef BCLIST_LJ_H
+#define BCLIST_LJ_H
 
 #include "bclist.hpp"
 
-namespace luad::lj {
-class window : public wininterface {
+class bclist_lj : public bclist {
 public:
-  window(const std::filesystem::path &p) : wininterface(p) { add_info(); }
-  window(luac_file &file) : wininterface(file) { add_info(); }
-  ~window() {}
+  bclist_lj(dislua::dump_info *i) : bclist(i) { update(); }
 
-  void add_info();
+  void update();
 
 private:
-  static void render_lj_dissasembly(wininterface *win);
-  static void render_lj_prototypes(wininterface *win);
+  void update_string();
+  div proto(size_t idx);
 };
-} // namespace luad::lj
 
-#endif // LUAD_LUAJIT_WINDOW_H
+#endif // BCLIST_LJ_H

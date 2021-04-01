@@ -1,3 +1,9 @@
+# v0.12-pre-alpha
+- Removed unused variables and functions;
+- Partially rewrited the sub-program `bclist`;
+- For Dear ImGui now used the branch `docking`, whereby appear opportunity to move windows;
+- In menu bar added the menu `View`, where you can turn on/off a specificity window.
+
 # v0.11-pre-alpha
 - Fixed bugs in string/table wrapping;
 - Fixed the problem with displaying Cyrillic characters in the window title in Windows (#1).

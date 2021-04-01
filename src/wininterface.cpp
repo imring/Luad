@@ -85,6 +85,16 @@ void luad::wininterface::render_menubar() {
       set_should_close(true);
     ImGui::EndMenu();
   }
+  if (ImGui::BeginMenu("View")) {
+    for (wininfo &wi : decompilers_info)
+      ImGui::MenuItem(wi.name.c_str(), nullptr, &wi.view);
+
+    if (plugins_info.size() > 0)
+      ImGui::Separator();
+    for (wininfo &wi: plugins_info)
+      ImGui::MenuItem(wi.name.c_str(), nullptr, &wi.view);
+    ImGui::EndMenu();
+  }
   if (ImGui::BeginMenu("Help")) {
     if (ImGui::MenuItem("About"))
       open_about = true;
@@ -95,7 +105,7 @@ void luad::wininterface::render_menubar() {
 
   if (open_about) {
     ImGui::OpenPopup("About");
-    ImVec2 winsize = get_window_size();
+    ImVec2 winsize = ImGui::GetMainViewport()->WorkSize;
     winsize.x /= 2.f;
     winsize.y /= 2.f;
     ImGui::SetNextWindowPos(winsize, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
@@ -105,8 +115,7 @@ void luad::wininterface::render_menubar() {
                              ImGuiWindowFlags_AlwaysAutoResize |
                                  ImGuiWindowFlags_NoMove)) {
     ImGui::Text("Luad - Disassembler for compiled Lua scripts.");
-    ImGui::Text("Version: %d.%02d (%d)", LUAD_VERSION / 100, LUAD_VERSION % 100,
-                LUAD_VER_DATE);
+    ImGui::Text("Version: %d.%02d.", LUAD_VERSION / 100, LUAD_VERSION % 100);
     ImGui::Text("Luad is licensed under the GNU General Public License v3.0.");
     ImGui::NewLine();
 
@@ -121,55 +130,44 @@ void luad::wininterface::render_menubar() {
 }
 
 void luad::wininterface::render() {
-  int width, height;
-  glfwGetWindowSize(win, &width, &height);
+  const ImGuiViewport *viewport = ImGui::GetMainViewport();
+  ImGui::SetNextWindowPos(viewport->WorkPos);
+  ImGui::SetNextWindowSize(viewport->WorkSize);
+  ImGui::SetNextWindowViewport(viewport->ID);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGuiWindowFlags window_flags =
+      ImGuiWindowFlags_MenuBar               | ImGuiWindowFlags_NoDocking  |
+      ImGuiWindowFlags_NoTitleBar            | ImGuiWindowFlags_NoCollapse |
+      ImGuiWindowFlags_NoResize              | ImGuiWindowFlags_NoMove     |
+      ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus ;
 
-  ImGui::SetNextWindowSize(get_window_size(), ImGuiCond_Always);
-  ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Once);
-  if (!ImGui::Begin("##luad", nullptr,
-                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                        ImGuiWindowFlags_NoTitleBar |
-                        ImGuiWindowFlags_MenuBar)) {
-    ImGui::End();
-    return;
-  }
+  ImGui::Begin("Luad", nullptr, window_flags);
+  ImGui::PopStyleVar(3);
+
+  ImGuiID dockid = ImGui::GetID("luaddock");
+  ImGui::DockSpace(dockid, ImVec2(0.0f, 0.0f));
 
   render_menubar();
 
-  size_t di_size = decompilers_info.size();
-  size_t pi_size = plugins_info.size();
-
-  ImGui::Columns(2);
-  ImGui::SetColumnWidth(0, ImGui::GetWindowWidth() / 5);
-  ImGui::BeginChild("##left");
-  render_left_panel();
-  ImGui::EndChild();
-
-  ImGui::NextColumn();
-  if (ImGui::BeginTabBar("##menu")) {
-    // decompilers info
-    for (size_t i = 0; i < di_size; ++i)
-      if (ImGui::BeginTabItem(decompilers_info[i].name.c_str())) {
-        decompilers_info[i].func(this);
-        ImGui::EndTabItem();
-      }
-
-    // plugins
-    for (size_t i = 0; i < pi_size; ++i)
-      if (ImGui::BeginTabItem(plugins_info[i].name.c_str())) {
-        plugins_info[i].func(this);
-        ImGui::EndTabItem();
-      }
-
-    ImGui::EndTabBar();
-  }
-  ImGui::Columns(1);
-
   ImGui::End();
-}
 
-ImVec2 luad::wininterface::get_window_size() {
-  int width, height;
-  glfwGetWindowSize(win, &width, &height);
-  return ImVec2(static_cast<float>(width), static_cast<float>(height));
+  for (wininfo &wi: decompilers_info) {
+    if (!wi.view)
+      continue;
+    ImGui::SetNextWindowDockID(dockid, ImGuiCond_FirstUseEver);
+    ImGui::Begin(wi.name.c_str());
+    wi.func(this);
+    ImGui::End();
+  }
+
+  for (wininfo &wi: plugins_info) {
+    if (!wi.view)
+      continue;
+    ImGui::SetNextWindowDockID(dockid, ImGuiCond_FirstUseEver);
+    ImGui::Begin(wi.name.c_str());
+    wi.func(this);
+    ImGui::End();
+  }
 }

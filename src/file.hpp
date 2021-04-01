@@ -21,7 +21,6 @@
 #include <filesystem>
 
 #include "dislua/dislua.hpp"
-
 namespace luad {
 class luac_file {
 public:

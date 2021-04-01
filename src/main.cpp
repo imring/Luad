@@ -47,11 +47,14 @@ int main(int argc, char *argv[]) {
     std::cerr << "GLFW Error " << error << ": " << description << std::endl;
   });
 
-  if (argc != 2) {
-    std::cout << "USAGE: luad [file]" << std::endl;
-    return 0;
-  }
-  std::filesystem::path p = argv[1];
+  IM_UNUSED(argc); IM_UNUSED(argv);
+  std::filesystem::path p = std::filesystem::u8path("./шпора_imgui.luac");
+
+  //if (argc != 2) {
+  //  std::cout << "USAGE: luad [file]" << std::endl;
+  //  return 0;
+  //}
+  //std::filesystem::path p = argv[1];
 
   luad::luac_file main_file(p);
   switch (main_file.error()) {
@@ -92,7 +95,8 @@ int main(int argc, char *argv[]) {
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO(); IM_UNUSED(io);
+  ImGuiIO &io = ImGui::GetIO();
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   if (!main_win->initialize())
     return 1;
 

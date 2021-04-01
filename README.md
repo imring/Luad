@@ -1,13 +1,13 @@
 # Luad
 English | [Русский](README-RU.md)
-<p align="center"><img src="./assets/v0.11.png" /></p>
+<p align="center"><img src="./assets/v0.12.png" /></p>
 
 [![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)
 [![Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://opensource.org/licenses/GPL-3.0)
 
 Luad - Disassembler for compiled Lua scripts.  
-At the moment the program is in development (v0.11-pre-alpha).
+At the moment the program is in development (v0.12-pre-alpha).
 
 Supported compilers:
 - [LuaJIT](http://luajit.org/) v1 & v2.
@@ -19,7 +19,7 @@ Dependencies:
 - [Dear ImGui](https://github.com/ocornut/imgui) (git submodule);
 - [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) (git submodule);
 - [{fmt}](https://github.com/fmtlib/fmt);
-- [DisLua C++ (disluapp)](https://github.com/imring/disluapp).
+- [DisLua C++ (disluapp)](https://github.com/imring/disluapp) >= v1.03.
 
 ```bash
 $ git clone --recursive https://github.com/imring/luad
@@ -35,7 +35,7 @@ Open the terminal and use the command:
 ```bash
 ./luad [file]
 ```
-Make sure there is a `fonts` folder with fonts of [Liberation](https://github.com/liberationfonts/liberation-fonts).
+Make sure there is a `fonts` folder with fonts of [Liberation Mono](https://github.com/liberationfonts/liberation-fonts).
 
 ## TODO
 - Graph view (e.g. [IDA](https://www.hex-rays.com/products/ida/tech/graphing/));

@@ -20,19 +20,21 @@
 
 #include <fmt/core.h>
 
-#include "bclist.hpp"
+#include "lj.hpp"
+
+namespace lj = dislua::lj;
 
 std::string tostring_header_flags(dislua::dump_info *info) {
   std::string res;
   dislua::uleb128 flags = info->header.flags;
 
-  if (flags & dislua::lj::DUMP_BE)
+  if (flags & lj::DUMP_BE)
     res += "DUMP_BE | ";
-  if (flags & dislua::lj::DUMP_STRIP)
+  if (flags & lj::DUMP_STRIP)
     res += "DUMP_STRIP | ";
-  if (flags & dislua::lj::DUMP_FFI)
+  if (flags & lj::DUMP_FFI)
     res += "DUMP_FFI | ";
-  if (info->version == 2 && flags & dislua::lj::DUMP_FR2)
+  if (info->version == 2 && flags & lj::DUMP_FR2)
     res += "DUMP_FR2 | ";
 
   if (!res.empty())
@@ -41,19 +43,18 @@ std::string tostring_header_flags(dislua::dump_info *info) {
   return res;
 }
 
-std::string tostring_proto_flags(dislua::dump_info::proto &p) {
+std::string tostring_proto_flags(dislua::uleb128 flags) {
   std::string res;
-  dislua::uleb128 flags = p.flags;
 
-  if (flags & dislua::lj::PROTO_CHILD)
+  if (flags & lj::PROTO_CHILD)
     res += "PROTO_CHILD | ";
-  if (flags & dislua::lj::PROTO_VARARG)
+  if (flags & lj::PROTO_VARARG)
     res += "PROTO_VARARG | ";
-  if (flags & dislua::lj::PROTO_FFI)
+  if (flags & lj::PROTO_FFI)
     res += "PROTO_FFI | ";
-  if (flags & dislua::lj::PROTO_NOJIT)
+  if (flags & lj::PROTO_NOJIT)
     res += "PROTO_NOJIT | ";
-  if (flags & dislua::lj::PROTO_ILOOP)
+  if (flags & lj::PROTO_ILOOP)
     res += "PROTO_ILOOP | ";
 
   if (!res.empty())
@@ -99,8 +100,7 @@ std::string fix_string(std::string &str) {
   return res + "\"";
 }
 
-std::string tostring_varname(dislua::dump_info::varname &vn) {
-  namespace lj = dislua::lj;
+std::string tostring_varname(dislua::varname &vn) {
   switch (vn.type) {
   case lj::VARNAME_FOR_IDX:
     return "(index)";
@@ -119,21 +119,21 @@ std::string tostring_varname(dislua::dump_info::varname &vn) {
   }
 }
 
-std::string table_kv_tostring(const dislua::dump_info::table_val_t &v) {
+std::string table_kv_tostring(const dislua::table_val_t &v) {
   std::string res;
-  std::visit(dislua::overloaded{
-                 [&](std::nullptr_t) { res = "nil"; },
-                 [&](bool arg) { res = arg ? "true" : "false"; },
-                 [&](dislua::leb128 arg) { res = std::to_string(arg); },
-                 [&](double arg) { res = std::to_string(arg); },
-                 [&](std::string arg) { res = fix_string(arg); }},
-             v);
+  std::visit(
+      dislua::overloaded{[&](std::nullptr_t) { res = "nil"; },
+                         [&](bool arg) { res = arg ? "true" : "false"; },
+                         [&](dislua::leb128 arg) { res = std::to_string(arg); },
+                         [&](double arg) { res = std::to_string(arg); },
+                         [&](std::string arg) { res = fix_string(arg); }},
+      v);
   return res;
 }
 
-std::string table_tostring(dislua::dump_info::table_t &t) {
+std::string table_tostring(dislua::table_t &t) {
   std::string res;
-  dislua::dump_info::table_t copy_table = t;
+  dislua::table_t copy_table = t;
   size_t newline = 0;
 
   dislua::leb128 i = 1;
@@ -148,7 +148,7 @@ std::string table_tostring(dislua::dump_info::table_t &t) {
   }
 
   for (auto &kv: copy_table) {
-    if (kv.second.index() == 0)
+    if (kv.second.index() == 0) // std::nullptr_t => nil
       continue;
     
     if (res.size() - newline > 50) {
@@ -165,54 +165,44 @@ std::string table_tostring(dislua::dump_info::table_t &t) {
   return "{" + res + "}";
 }
 
-std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
-                                      std::vector<size_t> &idxs) {
-  namespace lj = dislua::lj;
+bclist::div bclist_lj::proto(size_t proto_id) {
+  div res;
+  res.header = fmt::format("proto{} do\n", proto_id);
+  res.footer = "end\n\n";
 
-  dislua::uint version = info->version;
+  dislua::proto &p = info->protos[proto_id];
   bool is_debug = (info->header.flags & dislua::lj::DUMP_STRIP) == 0;
-  dislua::dump_info::proto &p = info->protos[proto_id];
-  auto opcodes = version == 1 ? lj::v1::opcodes : lj::v2::opcodes;
-  dislua::uchar max = version == 1 ? dislua::uchar(lj::v1::BC__MAX)
-                                   : dislua::uchar(lj::v2::BC__MAX);
+  dislua::uint i = 0;
+  auto opcodes = info->version == 1 ? lj::v1::opcodes : lj::v2::opcodes;
+  dislua::uchar max = info->version == 1 ? dislua::uchar(lj::v1::BC__MAX)
+                                         : dislua::uchar(lj::v2::BC__MAX);
 
-  auto get_mode = [&](dislua::uchar opcode, int shift = 0) -> int {
-    // shift 0 = field a
-    // shift 3 = field b
-    // shift 7 = field c/d
+  auto get_mode = [&](dislua::uchar opcode) -> int {
+    // rshift 0 = field a
+    // rshift 3 = field b
+    // rshift 7 = field c/d
 
     if (opcode >= max)
       return int(lj::BCM___);
-    int mode = opcodes[opcode].second;
-    if (shift)
-      mode >>= shift;
-    return (mode & lj::BCM_max);
+    return opcodes[opcode].second;
   };
   auto get_uv = [&](size_t i) -> std::string {
     if (i >= p.uv.size())
       return "(error)";
 
-    if (is_debug)
-      return "uv_" + p.uv_names[i];
-    std::string res;
-    fmt::format_to(std::back_inserter(res), "uv_{:d}_{:d}", proto_id, i);
-    return res;
+    return fmt::format("uv_{:d}_{:d}", proto_id, i);
   };
   auto get_label = [&](size_t i) -> std::string {
     if (i >= p.ins.size())
       return "(error)";
 
-    std::string res;
-    fmt::format_to(std::back_inserter(res), "label_{:d}_{:d}", proto_id, i);
-    return res;
+    return fmt::format("label_{:d}_{:d}", proto_id, i);
   };
   auto get_knum = [&](size_t i) -> std::string {
     if (i >= p.knum.size())
       return "(error)";
 
-    std::string res;
-    fmt::format_to(std::back_inserter(res), "knum_{:d}_{:d}", proto_id, i);
-    return res;
+    return fmt::format("knum_{:d}_{:d}", proto_id, i);
   };
   auto get_kgc = [&](size_t i, lj::kgc mode) -> std::string {
     if (i >= p.kgc.size())
@@ -221,12 +211,8 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
     bool is_correct_mode = true;
     std::visit(
         dislua::overloaded{
-            [&](dislua::dump_info::proto) {
-              is_correct_mode = mode == lj::KGC_CHILD;
-            },
-            [&](dislua::dump_info::table_t) {
-              is_correct_mode = mode == lj::KGC_TAB;
-            },
+            [&](dislua::proto) { is_correct_mode = mode == lj::KGC_CHILD; },
+            [&](dislua::table_t) { is_correct_mode = mode == lj::KGC_TAB; },
             [&](long long) { is_correct_mode = mode == lj::KGC_I64; },
             [&](unsigned long long) { is_correct_mode = mode == lj::KGC_U64; },
             [&](std::complex<double>) {
@@ -238,41 +224,42 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
     if (!is_correct_mode)
       return "(error)";
 
-    std::string res;
-    fmt::format_to(std::back_inserter(res), "kgc_{:d}_{:d}", proto_id, i);
-    return res;
+    return fmt::format("kgc_{:d}_{:d}", proto_id, i);
   };
 
-  auto is_jump = [&](dislua::uchar opcode) -> bool {
-    return get_mode(opcode, 7) == lj::BCMjump;
+  auto is_jump = [](int mode) -> bool {
+    return ((mode >> 7) & lj::BCM_max) == lj::BCMjump;
   };
-  auto has_b_field = [&](dislua::uchar opcode) -> bool {
-    return get_mode(opcode, 3) != lj::BCM___;
+  auto has_b_field = [](int mode) -> bool {
+    return ((mode >> 3) & lj::BCM_max) != lj::BCM___;
   };
-  auto is_uv = [&](dislua::uchar opcode, int shift = 0) -> bool {
-    return get_mode(opcode) <= lj::BCMlits &&
-           get_mode(opcode, shift) == lj::BCMuv;
+  auto is_uv = [](int mode, int shift = 0) -> bool {
+    return ((mode >> shift) & lj::BCM_max) == lj::BCMuv;
   };
-  auto is_num = [&](dislua::uchar opcode, int shift = 0) -> bool {
-    return get_mode(opcode, shift) == lj::BCMnum;
+  auto is_num = [](int mode, int shift = 0) -> bool {
+    return ((mode >> shift) & lj::BCM_max) == lj::BCMnum;
   };
-  auto is_str = [&](dislua::uchar opcode, int shift = 0) -> bool {
-    return get_mode(opcode, shift) == lj::BCMstr;
+  auto is_str = [](int mode, int shift = 0) -> bool {
+    return ((mode >> shift) & lj::BCM_max) == lj::BCMstr;
   };
-  auto is_func = [&](dislua::uchar opcode, int shift = 0) -> bool {
-    return get_mode(opcode, shift) == lj::BCMfunc;
+  auto is_func = [](int mode, int shift = 0) -> bool {
+    return ((mode >> shift) & lj::BCM_max) == lj::BCMfunc;
   };
-  auto is_tab = [&](dislua::uchar opcode, int shift = 0) -> bool {
-    return get_mode(opcode, shift) == lj::BCMtab;
+  auto is_tab = [](int mode, int shift = 0) -> bool {
+    return ((mode >> shift) & lj::BCM_max) == lj::BCMtab;
   };
 
-  auto res = std::make_unique<bclist::div>();
-  fmt::format_to(std::back_inserter(res->header), "proto{} do\n", proto_id);
+  auto fill_field = [](std::string &out, int field) {
+    std::string str_num = std::to_string(field);
+    if (!out.empty())
+      out += " (" + str_num + ")";
+    else
+      out = str_num;
+  };
 
   std::vector<dislua::uint> jumps;
-  dislua::uint i = 0;
   for (auto ins: p.ins) {
-    if (is_jump(ins.opcode))
+    if (is_jump(get_mode(ins.opcode)))
       jumps.push_back(static_cast<dislua::uint>(ins.d) + 1 + i - 0x8000);
     i++;
   }
@@ -285,12 +272,12 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
   // 5: varnames (debug)
 
   // prototype info
-  bclist::div pinfo;
+  div pinfo;
   pinfo.header = "\t.info\n";
   if (p.flags != 0)
     fmt::format_to(std::back_inserter(pinfo.lines), "\tflags = 0b{} -- {}\n",
                    std::bitset<8>(p.flags).to_string(),
-                   tostring_proto_flags(p));
+                   tostring_proto_flags(p.flags));
   else
     pinfo.lines += "\tflags = 0b0\n";
   fmt::format_to(std::back_inserter(pinfo.lines),
@@ -308,7 +295,7 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
                    "\tfirstline = {:d}\n"
                    "\tnumline = {:d}\n",
                    p.firstline, p.numline);
-  res->additional.push_back(pinfo);
+  res.additional.push_back(pinfo);
 
   // instructinos & lineinfo (debug)
   bclist::div pins;
@@ -318,7 +305,7 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
     pins.header = "\n\t.ins\n";
     for (auto ins: p.ins) {
       if (std::find(jumps.begin(), jumps.end(), i) != jumps.end()) // is a label
-        fmt::format_to(std::back_inserter(pins.lines), "{}:\n", get_label(i));
+        pins.lines += get_label(i) + ":\n";
       fmt::format_to(std::back_inserter(pins.lines),
                      "\t{:04d}: {:02x} {:02x} {:02x} {:02x} ", i, ins.opcode,
                      ins.a, ins.c, ins.b);
@@ -330,48 +317,36 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
       std::string field_a, field_b, field_cd, comment;
       if (is_debug && p.lineinfo[i] != prev_line) {
         prev_line = p.lineinfo[i];
-        fmt::format_to(std::back_inserter(comment),
-                       " -- Line in source code: {:d}", prev_line);
+        comment = fmt::format(" -- Line in source code: {:d}", prev_line);
       }
 
-      if (is_uv(ins.opcode))
+      int mode = get_mode(ins.opcode);
+      if (is_uv(mode))
         field_a = get_uv(ins.a);
+      fill_field(field_a, static_cast<int>(ins.a));
 
-      if (!field_a.empty())
-        fmt::format_to(std::back_inserter(field_cd), " ({:d})", ins.a);
-      else
-        field_a = std::to_string(static_cast<int>(ins.a));
-
-      if (has_b_field(ins.opcode)) {
+      if (has_b_field(mode)) {
         field_b = std::to_string(static_cast<int>(ins.b));
 
         if (is_num(ins.opcode, 7))
           field_cd = get_knum(ins.c);
         else if (is_str(ins.opcode, 7))
           field_cd = get_kgc(p.kgc.size() - ins.c - 1, lj::KGC_STR);
-
-        if (!field_cd.empty())
-          fmt::format_to(std::back_inserter(field_cd), " ({:d})", ins.c);
-        else
-          field_cd = std::to_string(static_cast<int>(ins.c));
+        fill_field(field_cd, static_cast<int>(ins.c));
       } else {
-        if (is_jump(ins.opcode))
+        if (is_jump(mode))
           field_cd = get_label(ins.d + i + 1 - 0x8000);
-        else if (is_uv(ins.opcode, 7))
+        else if (is_uv(mode, 7))
           field_cd = get_uv(ins.d);
-        else if (is_num(ins.opcode, 7))
+        else if (is_num(mode, 7))
           field_cd = get_knum(ins.d);
-        else if (is_str(ins.opcode, 7))
+        else if (is_str(mode, 7))
           field_cd = get_kgc(p.kgc.size() - ins.d - 1, lj::KGC_STR);
-        else if (is_func(ins.opcode, 7))
+        else if (is_func(mode, 7))
           field_cd = get_kgc(p.kgc.size() - ins.d - 1, lj::KGC_CHILD);
-        else if (is_tab(ins.opcode, 7))
+        else if (is_tab(mode, 7))
           field_cd = get_kgc(p.kgc.size() - ins.d - 1, lj::KGC_TAB);
-
-        if (!field_cd.empty())
-          fmt::format_to(std::back_inserter(field_cd), " ({:d})", ins.d);
-        else
-          field_cd = std::to_string(static_cast<unsigned int>(ins.d));
+        fill_field(field_cd, static_cast<int>(ins.d));
       }
 
       pins.lines += field_a;
@@ -385,7 +360,7 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
       i++;
     }
   }
-  res->additional.push_back(pins);
+  res.additional.push_back(pins);
 
   // upvalue data & names (debug)
   bclist::div puvdata;
@@ -398,9 +373,9 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
       i++;
     }
   }
-  res->additional.push_back(puvdata);
+  res.additional.push_back(puvdata);
 
-  // constant garbage collector objects
+    // constant garbage collector objects
   bclist::div pkgc;
   if (p.kgc.size() > 0) {
     pkgc.header = "\n\t.kgc\n";
@@ -408,13 +383,15 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
     for (auto kgc: p.kgc) {
       std::visit(
           dislua::overloaded{
-              [&](dislua::dump_info::proto) {
+              [&](dislua::proto p) {
+                auto it =
+                    std::find(info->protos.begin(), info->protos.end(), p);
+                std::ptrdiff_t pidx = std::distance(info->protos.begin(), it);
                 fmt::format_to(std::back_inserter(pkgc.lines),
                                "\t{} = proto{}\n", get_kgc(i, lj::KGC_CHILD),
-                               idxs.back());
-                idxs.pop_back();
+                               pidx);
               },
-              [&](dislua::dump_info::table_t arg) {
+              [&](dislua::table_t arg) {
                 fmt::format_to(std::back_inserter(pkgc.lines), "\t{} = {}\n",
                                get_kgc(i, lj::KGC_TAB), table_tostring(arg));
               },
@@ -440,9 +417,8 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
       i++;
     }
   }
-  res->additional.push_back(pkgc);
+  res.additional.push_back(pkgc);
 
-  
   // constant numbers
   bclist::div pknum;
   if (p.knum.size() > 0) {
@@ -454,7 +430,7 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
       i++;
     }
   }
-  res->additional.push_back(pknum);
+  res.additional.push_back(pknum);
 
   // variable names
   bclist::div pvarnames;
@@ -463,21 +439,20 @@ std::unique_ptr<bclist::div> lj_proto(size_t proto_id, dislua::dump_info *info,
     i = 0;
     for (auto varname: p.varnames) {
       fmt::format_to(std::back_inserter(pvarnames.lines),
-                     "\t<{:d}:{:d}> = {}\n", varname.start, varname.end,
+                     "\t[{:d}:{:d}] = {}\n", varname.start, varname.end,
                      tostring_varname(varname));
       i++;
     }
   }
-  res->additional.push_back(pvarnames);
+  res.additional.push_back(pvarnames);
 
-  res->footer = "end\n\n";
   return res;
 }
 
 // 0: compiler info
 // 1: header info
 // 2..: prototypes
-void bclist::lj_update() {
+void bclist_lj::update() {
   div compiler;
   fmt::format_to(std::back_inserter(compiler.lines),
                  "-- Compiler: LuaJIT\n"
@@ -504,36 +479,36 @@ void bclist::lj_update() {
 
   std::vector<size_t> idxs;
   for (size_t i = 0; i < info->protos.size(); ++i) {
-    std::unique_ptr<div> p = lj_proto(i, info, idxs);
-    divs.push_back(*p.get());
+    div p = proto(i);
+    divs.push_back(p);
     idxs.push_back(i);
   }
+
+  update_string();
 }
 
-std::string bclist::lj_full() {
-  std::string res;
+void bclist_lj::update_string() {
+  full_str.clear();
 
   // compiler info
   auto ci = divs[0];
-  res += ci.lines + ci.footer;
+  full_str += ci.lines + ci.footer;
 
   // header info
   auto hi = divs[1];
-  res += hi.header + hi.lines + hi.footer;
+  full_str += hi.header + hi.lines + hi.footer;
 
   // prototypes
   for (size_t i = 2; i < divs.size(); ++i) {
     auto pi = divs[i];
-    res += pi.header;
+    full_str += pi.header;
 
     for (auto add: pi.additional) {
       if (add.header.empty())
         continue;
-      res += add.header + add.lines + add.footer;
+      full_str += add.header + add.lines + add.footer;
     }
 
-    res += pi.footer;
+    full_str += pi.footer;
   }
-
-  return res;
 }

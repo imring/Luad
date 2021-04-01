@@ -29,23 +29,28 @@
 #include "imgui.h"
 
 #include "file.hpp"
+#include "bclist.hpp"
 
 namespace luad {
 class wininterface : public luac_file {
 public:
   struct wininfo {
+    bool view = false;
     std::string name;
     std::function<void(wininterface *)> func;
   };
 
-  wininterface(const std::filesystem::path &p) : luac_file(p) {}
-  wininterface(luac_file &file) : luac_file(file) {}
-  virtual ~wininterface() {}
+  wininterface(const std::filesystem::path &p) : luac_file(p) {
+    if (error() == LFE_NO)
+      bc = bclist::get_list(info());
+  }
+  wininterface(luac_file &file) : luac_file(file) {
+    if (error() == LFE_NO)
+      bc = bclist::get_list(info());
+  }
 
   bool initialize();
   void render();
-  inline ImFont *get_font(const std::string &v) { return fonts[v]; }
-  ImVec2 get_window_size();
 
   // glfw functions
   inline void destroy() {
@@ -61,9 +66,8 @@ public:
   }
   inline void swap_buffers() { glfwSwapBuffers(win); }
 
-  virtual void render_left_panel(){}
-
   TextEditor editor;
+  bclist bc;
 
 protected:
   std::vector<wininfo> decompilers_info;
