@@ -1,0 +1,81 @@
+name: CI Build
+
+on: [push]
+
+jobs:
+  build:
+    name: build-release
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install GCC/CMake/GLFW
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install gcc g++ cmake libglfw3-dev freeglut3-dev -y
+
+    - name: Checkout gl3w
+      uses: actions/checkout@v2
+      with:
+        repository: skaslev/gl3w
+        path: gl3w
+
+    - name: Checkout disluapp
+      uses: actions/checkout@v2
+      with:
+        repository: imring/disluapp
+        path: disluapp
+
+    - name: Checkout {fmt}
+      uses: actions/checkout@v2
+      with:
+        repository: fmtlib/fmt
+        path: fmt
+
+    - name: Install gl3w
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        source-dir: gl3w
+        build-dir: gl3w/build
+        cc: gcc
+        cxx: g++
+        build-type: Release
+        install-build: true
+
+    - name: Install disluapp
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        source-dir: disluapp
+        build-dir: disluapp/build
+        cc: gcc
+        cxx: g++
+        build-type: Release
+        configure-options: -DBUILD_DOC=OFF -DBUILD_TEST=OFF
+        install-build: true
+
+    - name: Install {fmt}
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        source-dir: fmt
+        build-dir: fmt/build
+        cc: gcc
+        cxx: g++
+        build-type: Release
+        configure-options: -DFMT_DOC=OFF -DFMT_TEST=OFF -DFMT_OS=ON
+        install-build: true
+
+    - name: Build the project
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        build-dir: build
+        cc: gcc
+        cxx: g++
+        build-type: Release
+
+    - name: Upload the archive
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-build
+        path: output/
