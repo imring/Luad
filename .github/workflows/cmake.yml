@@ -6,15 +6,39 @@ jobs:
   build:
     name: build-release
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, windows]
+        include:
+          - build: linux
+            os: ubuntu-latest
+            adm: sudo
+          - build: windows
+            os: windows-latest
+            adm: ""
     steps:
-    - uses: actions/checkout@v2
 
-    - name: Install GCC/CMake/GLFW
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Install GCC/CMake (Linux)
       shell: bash
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt update
-        sudo apt install gcc g++ cmake libglfw3-dev freeglut3-dev -y
+        sudo apt install gcc g++ cmake freeglut3-dev libx11-dev -y
+
+    - name: Install CMake (Windows)
+      if: matrix.os == 'windows-latest'
+      run: choco install cmake
+
+    - name: Checkout GLFW
+      uses: actions/checkout@v2
+      with:
+        repository: glfw/glfw
+        path: glfw
 
     - name: Checkout gl3w
       uses: actions/checkout@v2
@@ -34,48 +58,56 @@ jobs:
         repository: fmtlib/fmt
         path: fmt
 
-    - name: Install gl3w
-      uses: ashutoshvarma/action-cmake-build@master
-      with:
-        source-dir: gl3w
-        build-dir: gl3w/build
-        cc: gcc
-        cxx: g++
-        build-type: Release
-        install-build: true
+    - name: Build & install GLFW
+      shell: bash
+      working-directory: glfw
+      run: |
+        mkdir build && cd build
+        cmake .. -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_DOCS=OFF -DGLFW_INSTALL=ON
+        ${{ matrix.adm }} cmake --build . --target install --config Release
 
-    - name: Install disluapp
-      uses: ashutoshvarma/action-cmake-build@master
-      with:
-        source-dir: disluapp
-        build-dir: disluapp/build
-        cc: gcc
-        cxx: g++
-        build-type: Release
-        configure-options: -DBUILD_DOC=OFF -DBUILD_TEST=OFF
-        install-build: true
+    - name: Build & install gl3w
+      shell: bash
+      working-directory: gl3w
+      run: |
+        mkdir build && cd build
+        cmake ..
+        ${{ matrix.adm }} cmake --build . --target install --config Release
 
-    - name: Install {fmt}
-      uses: ashutoshvarma/action-cmake-build@master
-      with:
-        source-dir: fmt
-        build-dir: fmt/build
-        cc: gcc
-        cxx: g++
-        build-type: Release
-        configure-options: -DFMT_DOC=OFF -DFMT_TEST=OFF -DFMT_OS=ON
-        install-build: true
+    - name: Build & install disluapp
+      shell: bash
+      working-directory: disluapp
+      run: |
+        mkdir build && cd build
+        cmake .. -DBUILD_DOC=OFF -DBUILD_TEST=OFF
+        ${{ matrix.adm }} cmake --build . --target install --config Release
 
-    - name: Build the project
-      uses: ashutoshvarma/action-cmake-build@master
-      with:
-        build-dir: build
-        cc: gcc
-        cxx: g++
-        build-type: Release
+    - name: Build & install {fmt}
+      shell: bash
+      working-directory: fmt
+      run: |
+        mkdir build && cd build
+        cmake .. -DFMT_DOC=OFF -DFMT_TEST=OFF -DFMT_OS=ON
+        ${{ matrix.adm }} cmake --build . --target install --config Release
+
+    - name: Build the project (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: bash
+      run: |
+        mkdir build && cd build
+        cmake .. -DVCPKG_CHAINLOAD_TOOLCHAIN_FILE=${{ env.RUNVCPKG_VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake
+        cmake --build . --config Release
+
+    - name: Build the project (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        mkdir build && cd build
+        cmake ..
+        cmake --build . --config Release
 
     - name: Upload the archive
       uses: actions/upload-artifact@v2
       with:
-        name: linux-build
+        name: ${{ runner.os }}
         path: output/
