@@ -1,3 +1,6 @@
+# v0.13-pre-alpha
+- bclist/lj: Fixed a bug with the field `c`.
+
 # v0.12-pre-alpha
 - Removed unused variables and functions;
 - Partially rewrited the sub-program `bclist`;

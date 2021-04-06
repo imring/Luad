@@ -328,9 +328,9 @@ bclist::div bclist_lj::proto(size_t proto_id) {
       if (has_b_field(mode)) {
         field_b = std::to_string(static_cast<int>(ins.b));
 
-        if (is_num(ins.opcode, 7))
+        if (is_num(mode, 7))
           field_cd = get_knum(ins.c);
-        else if (is_str(ins.opcode, 7))
+        else if (is_str(mode, 7))
           field_cd = get_kgc(p.kgc.size() - ins.c - 1, lj::KGC_STR);
         fill_field(field_cd, static_cast<int>(ins.c));
       } else {
