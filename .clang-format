@@ -1,8 +1,12 @@
-﻿---
 BasedOnStyle: LLVM
+Language: Cpp
+Standard: c++20
 AlignEscapedNewlines: Left
-AlwaysBreakTemplateDeclarations: 'Yes'
-SpaceBeforeRangeBasedForLoopColon: 'false'
+AlwaysBreakTemplateDeclarations: Yes
+SpaceBeforeRangeBasedForLoopColon: false
 UseTab: Never
-
-...
+SortIncludes: Never
+AllowShortFunctionsOnASingleLine: Empty
+IndentWrappedFunctionNames: false
+AlwaysBreakAfterDefinitionReturnType: None
+ColumnLimit: 120

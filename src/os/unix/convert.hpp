@@ -15,18 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_MAIN_H
-#define LUAD_MAIN_H
+#if !defined(LUAD_CONVERT_H) && defined(LUAD_UNIX)
+#define LUAD_CONVERT_H
 
-#define LUAD_VERSION 20L
+#include <string>
+#include <string_view>
 
-#if defined(unix) || defined(__unix__) || defined(__unix)
-#  define LUAD_UNIX
-#elif defined(_WIN32)
-#  define LUAD_WINDOWS
-#  if defined(UNICODE) || defined(_UNICODE)
-#    define LUAD_WINUNICODE
-#  endif
-#endif
+#include <wordexp.h>
 
-#endif // LUAD_MAIN_H
+inline std::string expand_environment(std::string_view str) {
+  wordexp_t p;
+  int result = wordexp(str.data(), &p, 0);
+  if (result != 0)
+    return {};
+
+  std::string res;
+  for (int i = 0; i < p.we_wordc; i++)
+    res += std::string{p.we_wordv[i]} + ' ';
+  res.pop_back();
+
+  wordfree(&p);
+  return res;
+}
+
+#endif // LUAD_CONVERT_H

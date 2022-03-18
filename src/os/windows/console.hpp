@@ -15,18 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_MAIN_H
-#define LUAD_MAIN_H
+#if !defined(LUAD_CONSOLE_H) && defined(LUAD_WINDOWS)
+#define LUAD_CONSOLE_H
 
-#define LUAD_VERSION 20L
+#include <string>
 
-#if defined(unix) || defined(__unix__) || defined(__unix)
-#  define LUAD_UNIX
-#elif defined(_WIN32)
-#  define LUAD_WINDOWS
-#  if defined(UNICODE) || defined(_UNICODE)
-#    define LUAD_WINUNICODE
-#  endif
-#endif
+#include <Windows.h>
 
-#endif // LUAD_MAIN_H
+inline void hide_console() {
+  ShowWindow(GetConsoleWindow(), SW_HIDE);
+}
+
+#endif // LUAD_CONSOLE_H

@@ -1,56 +1,61 @@
 # Luad
 [English](README.md) | Русский
-<p align="center"><img src="./assets/v0.12.png" /></p>
-
-[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)
-[![Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
-[![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://opensource.org/licenses/GPL-3.0)
 
 Luad - Дизассемблер для скомпилированных Lua скриптов.  
-На данный момент программа находиться в разработке (v0.12-pre-alpha).
+На данный момент программа находится в разработке (v0.20-pre-alpha).
+
+## Скриншот
+![screen](./docs/assets/v0.20.png)
+
+## Функционал
+- Hex редактор
+- Дизассемблер
+  - Перейти к строке по адресу/прототипу или его элементов.  
 
 Поддерживаемые компиляторы:
-- [LuaJIT](http://luajit.org/) v1 & v2.
+- [LuaJIT](https://luajit.org/) v1 & v2;
 
-## Build
-Зависимости:
-- [GLFW](https://github.com/glfw/glfw);
-- [gl3w](https://github.com/skaslev/gl3w);
-- [Dear ImGui](https://github.com/ocornut/imgui) (git submodule);
-- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) (git submodule);
+Следить за реализацией будущего функционала можете [здесь](https://github.com/users/imring/projects/1/views/1).
+
+## Сборка
+Для сборки потребуется:
+- Компилятор с поддержкой C++20;
+- [CMake](https://cmake.org/);
+
+Так же потребуются зависимости:
+- [disluapp](https://github.com/imring/disluapp);
 - [{fmt}](https://github.com/fmtlib/fmt);
-- [DisLua C++ (disluapp)](https://github.com/imring/disluapp) >= v1.03.
+- [nlohmann_json](https://github.com/nlohmann/json);
+- [nativefiledialog-extended](https://github.com/btzy/nativefiledialog-extended)*;
+- [glfwpp](https://github.com/janekb04/glfwpp)*;
+- [imgui_club](https://github.com/ocornut/imgui_club)*;
+- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit)*;
 
-```bash
-$ git clone --recursive https://github.com/imring/luad
-$ cd luad
-$ mkdir build && cd build
-$ cmake ..
-$ cmake --build .
+\* - имеется в репозитории как подмодуль.
+
+```shell
+git clone --recurse-submodules https://github.com/imring/luad
+cd luad
+cmake . -B build
+cmake --build build
 ```
-Результат сборки будет в папке `luad/output`.
+Результат сборки будет находиться в папке `luad/build`.
 
-## Using
-Откройте терминал и используйте команду:
-```bash
-./luad [file]
-```
-Убедитесь, что там имеется папка `fonts` с шрифтами [Liberation Mono](https://github.com/liberationfonts/liberation-fonts).
+## Использование
+Вы можете открыть файл с помощью строки меню `File->Open` в программе:  
+![openfile_gui](docs/assets/openfile_gui.png)  
+Либо с помощью "Открыть с помощью..." в проводнике:  
+![openfile_explorer](docs/assets/openfile_explorer.png)
 
-## TODO
-- Графический просмотр (пр. [IDA](https://www.hex-rays.com/products/ida/tech/graphing/));
-- Просмотр декомпилированного кода;
-- Написание своих плагинов на Lua;
-- Перезапись информации.
+## Авторы
+- [imring](https://github.com/imring);
 
-## License
-Luad находится под лицензией [GNU General Public License v3.0](https://opensource.org/licenses/GPL-3.0).
-
-## Copyright
-[disluapp](https://github.com/imring/disluapp) находится под лицензией [MIT License](https://opensource.org/licenses/MIT).  
-[{fmt}](https://github.com/fmtlib/fmt) находится под лицензией [MIT License](https://opensource.org/licenses/MIT).  
-[ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) находится под лицензией [MIT License](https://opensource.org/licenses/MIT).  
-[Dear ImGui](https://github.com/ocornut/imgui) находится под лицензией [MIT License](https://opensource.org/licenses/MIT).  
-[GLFW](https://github.com/glfw/glfw) находится под лицензией [zlib/libpng license](https://opensource.org/licenses/Zlib).  
-[gl3w](https://github.com/skaslev/gl3w) находится в общественном достоянии.  
-[OpenGL](https://www.opengl.org/) является зарегистрированным товарным знаком [Hewlett Packard Enterprise](https://www.hpe.com/).
+## Лицензия
+Программа распространяется под лицензией [GNU General Public License v3.0](LICENSE).  
+- Библиотека disluapp распространяется под лицензией [MIT License](https://github.com/imring/disluapp/blob/master/LICENSE).
+- Библиотека {fmt} распространяется под лицензией MIT License.
+- Библиотека nlohmann_json распространяется под лицензией [MIT License](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT).
+- Библиотека nativefiledialog-extended распространяется под лицензией [zlib License](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE).
+- Библиотека glfwpp распространяется под лицензией [MIT License](https://github.com/janekb04/glfwpp/blob/main/LICENSE).
+- Библиотека imgui_club распространяется под лицензией [MIT License](https://github.com/ocornut/imgui_club/blob/master/LICENSE.txt).
+- Библиотека ImGuiColorTextEdit распространяется под лицензией [MIT License](https://github.com/BalazsJako/ImGuiColorTextEdit/blob/master/LICENSE).

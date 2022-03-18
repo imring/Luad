@@ -1,3 +1,8 @@
+# v0.20-pre-alpha
+- Completely rewritten the `bclist` sub-program;
+- In `Disassembly` the ability to navigate to an address has been added;
+- Added settings for `bclist` and for the window.
+
 # v0.13-pre-alpha
 - bclist/lj: Fixed a bug with the field `c`.
 

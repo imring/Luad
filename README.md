@@ -1,56 +1,61 @@
 # Luad
 English | [Русский](README-RU.md)
-<p align="center"><img src="./assets/v0.12.png" /></p>
-
-[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)
-[![Standard](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
-[![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://opensource.org/licenses/GPL-3.0)
 
 Luad - Disassembler for compiled Lua scripts.  
-At the moment the program is in development (v0.12-pre-alpha).
+At the moment the program is in development (v0.20-pre-alpha).
+
+## Screenshot
+![screen](./docs/assets/v0.20.png)
+
+## Functional
+- Hex editor
+- Diassembler
+    - Jump to a string by address/prototype or its elements.
 
 Supported compilers:
-- [LuaJIT](http://luajit.org/) v1 & v2.
+- [LuaJIT](https://luajit.org/) v1 & v2;
+
+Follow the implementation of future functionality [here](https://github.com/users/imring/projects/1/views/1).
 
 ## Build
-Dependencies:
-- [GLFW](https://github.com/glfw/glfw);
-- [gl3w](https://github.com/skaslev/gl3w);
-- [Dear ImGui](https://github.com/ocornut/imgui) (git submodule);
-- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) (git submodule);
-- [{fmt}](https://github.com/fmtlib/fmt);
-- [DisLua C++ (disluapp)](https://github.com/imring/disluapp) >= v1.03.
+To build it you'll need:
+- Compiler with C++20 support;
+- [CMake](https://cmake.org/);
 
-```bash
-$ git clone --recursive https://github.com/imring/luad
-$ cd luad
-$ mkdir build && cd build
-$ cmake ..
-$ cmake --build .
+You'll also need dependencies:
+- [disluapp](https://github.com/imring/disluapp);
+- [{fmt}](https://github.com/fmtlib/fmt);
+- [nlohmann_json](https://github.com/nlohmann/json);
+- [nativefiledialog-extended](https://github.com/btzy/nativefiledialog-extended)*;
+- [glfwpp](https://github.com/janekb04/glfwpp)*;
+- [imgui_club](https://github.com/ocornut/imgui_club)*;
+- [ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit)*;
+
+\* - is included in the repository as a submodule.
+
+```shell
+git clone --recurse-submodules https://github.com/imring/luad
+cd luad
+cmake . -B build
+cmake --build build
 ```
-The build result will be in the directory `luad/output`.
+The build result will be in the directory `luad/build`.
 
 ## Using
-Open the terminal and use the command:
-```bash
-./luad [file]
-```
-Make sure there is a `fonts` folder with fonts of [Liberation Mono](https://github.com/liberationfonts/liberation-fonts).
+You can open a file with the menu line `File->Open` in the program:
+![openfile_gui](docs/assets/openfile_gui.png)  
+Or with "Open with..." in the explorer:
+![openfile_explorer](docs/assets/openfile_explorer.png)
 
-## TODO
-- Graph view (e.g. [IDA](https://www.hex-rays.com/products/ida/tech/graphing/));
-- View decompiled code;
-- Writing your own Lua plugins;
-- Rewrite the information.
+## Authors
+- [imring](https://github.com/imring);
 
 ## License
-Luad is licensed under the [GNU General Public License v3.0](https://opensource.org/licenses/GPL-3.0).
-
-## Copyright
-[disluapp](https://github.com/imring/disluapp) is licensed under the [MIT License](https://opensource.org/licenses/MIT).  
-[{fmt}](https://github.com/fmtlib/fmt) is licensed under the [MIT License](https://opensource.org/licenses/MIT).  
-[ImGuiColorTextEdit](https://github.com/BalazsJako/ImGuiColorTextEdit) is licensed under the [MIT License](https://opensource.org/licenses/MIT).  
-[Dear ImGui](https://github.com/ocornut/imgui) is licensed under the [MIT License](https://opensource.org/licenses/MIT).  
-[GLFW](https://github.com/glfw/glfw) is licensed under the [zlib/libpng license](https://opensource.org/licenses/Zlib).  
-[gl3w](https://github.com/skaslev/gl3w) is in the public domain.  
-[OpenGL](https://www.opengl.org/) is a registered trademark of [Hewlett Packard Enterprise](https://www.hpe.com/).
+The program is licensed under the [GNU General Public License v3.0](LICENSE).
+- The disluapp library is licensed under the [MIT License](https://github.com/imring/disluapp/blob/master/LICENSE).
+- The {fmt} library is licensed under the MIT License.
+- The nlohmann_json library is licensed under the [MIT License](https://github.com/nlohmann/json/blob/develop/LICENSE.MIT).
+- The nativefiledialog-extended library is licensed under the [zlib License](https://github.com/btzy/nativefiledialog-extended/blob/master/LICENSE).
+- The glfwpp library is licensed under the [MIT License](https://github.com/janekb04/glfwpp/blob/main/LICENSE).
+- The imgui_club library is licensed under the [MIT License](https://github.com/ocornut/imgui_club/blob/master/LICENSE.txt).
+- The ImGuiColorTextEdit library is licensed under the [MIT License](https://github.com/BalazsJako/ImGuiColorTextEdit/blob/master/LICENSE).

@@ -1,75 +1,48 @@
-cmake_minimum_required(VERSION 3.16)
-
-project(luad VERSION 0.12
-        DESCRIPTION "Disassembly Lua compiled scripts"
+cmake_minimum_required(VERSION 3.20)
+project(Luad
+        VERSION 0.20
+        DESCRIPTION "Disassembler for compiled Lua scripts"
         LANGUAGES CXX C)
 
 find_package(OpenGL REQUIRED)
-find_package(glfw3  REQUIRED)
-find_package(gl3w   REQUIRED)
-find_package(fmt    REQUIRED)
 find_package(dislua REQUIRED)
+find_package(fmt REQUIRED)
+find_package(nlohmann_json 3.2.0 REQUIRED)
 
-include(cmake/include_imgui.cmake)
+# include nfd
+add_subdirectory(external/nativefiledialog-extended)
 
-set(LUAD_SOURCE
+# include glfwpp
+set(GLFWPP_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE) # disable building GLFWPP examples
+add_subdirectory(external/glfwpp)
+add_subdirectory(external/glfwpp/external/glew-cmake)
+add_subdirectory(external/glfwpp/external/imgui)
+
+# include bclist
+add_subdirectory(src/bclist)
+
+add_executable(luad
   src/main.cpp
   src/file.cpp
-  src/bclist.cpp
-  src/wininterface.cpp
 
-  src/bclist/lj.cpp
-  src/luajit/window.cpp
-)
+  src/gui/disassembly.cpp
+  src/gui/settings.cpp
+  src/gui/wininterface.cpp
 
-set(SOURCE ${SOURCE} ${LUAD_SOURCE})
+  src/imgui_addons/imgui_addons.cpp
+  src/imgui_addons/imgui_notf.cpp
 
-set(HEADER_DIR ${HEADER_DIR}
-  src
-  src/luajit
-)
-
-add_executable(luad ${SOURCE})
-
-target_compile_definitions(luad PRIVATE IMGUI_IMPL_OPENGL_LOADER_GL3W)
-target_include_directories(luad PRIVATE ${HEADER_DIR})
-target_link_libraries(luad PRIVATE ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS} glfw fmt::fmt dislua gl3w)
-target_compile_features(luad PRIVATE cxx_std_17)
-set_target_properties(luad PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/output/"
-  RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/output/"
-  RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/output/"
-)
-
-if (MSVC)
-  list(APPEND FLAGS /W4 /WX)
-else()
-  # https://habr.com/ru/post/490850/
-  list(APPEND FLAGS 
-    -Werror
-    -pedantic-errors
-
-    -Wall
-    -Wextra
-    -Wpedantic
-
-    -Wcast-align
-    -Wcast-qual
-    -Wconversion
-    -Wctor-dtor-privacy
-    -Wduplicated-branches
-    -Wduplicated-cond
-    -Wextra-semi
-    -Wfloat-equal
-    -Wlogical-op
-    -Wnon-virtual-dtor
-    -Wold-style-cast
-    -Woverloaded-virtual
-    -Wredundant-decls
-    -Wsign-conversion
-    -Wsign-promo
-  )
-endif()
-string(REPLACE ";" " " FLAGS_STR "${FLAGS}")
-
-set_source_files_properties(${LUAD_SOURCE} PROPERTIES COMPILE_FLAGS "${FLAGS_STR}")
+  # external
+  external/ImGuiColorTextEdit/TextEditor.cpp)
+target_include_directories(luad PRIVATE
+  external/imgui_club/imgui_memory_editor
+  external/ImGuiColorTextEdit)
+target_compile_features(luad PRIVATE cxx_std_20)
+target_link_libraries(luad PRIVATE ${OPENGL_LIBRARIES}
+    libglew_static GLFWPP Imgui nfd # window
+    dislua fmt::fmt bclist          # parse/show
+    nlohmann_json::nlohmann_json)   # config
+target_compile_definitions(luad PRIVATE
+    GLEW_STATIC
+    UNICODE
+    _UNICODE)

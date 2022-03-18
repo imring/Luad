@@ -1,6 +1,12 @@
-[submodule "deps/imgui"]
-	path = deps/imgui
-	url = https://github.com/ocornut/imgui
-[submodule "deps/ImGuiColorTextEdit"]
-	path = deps/ImGuiColorTextEdit
-	url = https://github.com/BalazsJako/ImGuiColorTextEdit
+[submodule "external/glfwpp"]
+	path = external/glfwpp
+	url = https://github.com/janekb04/glfwpp
+[submodule "external/nativefiledialog-extended"]
+	path = external/nativefiledialog-extended
+	url = https://github.com/btzy/nativefiledialog-extended
+[submodule "external/ImGuiColorTextEdit"]
+	path = external/ImGuiColorTextEdit
+	url = https://github.com/imring/ImGuiColorTextEdit
+[submodule "external/imgui_club"]
+	path = external/imgui_club
+	url = https://github.com/ocornut/imgui_club
