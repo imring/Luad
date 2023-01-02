@@ -15,18 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_MAIN_H
-#define LUAD_MAIN_H
+#ifndef LUAD_FUNCTIONS_HPP
+#define LUAD_FUNCTIONS_HPP
 
-#define LUAD_VERSION 20L
+#include <QtWidgets>
+#include <QTableWidget>
 
-#if defined(unix) || defined(__unix__) || defined(__unix)
-#  define LUAD_UNIX
-#elif defined(_WIN32)
-#  define LUAD_WINDOWS
-#  if defined(UNICODE) || defined(_UNICODE)
-#    define LUAD_WINUNICODE
-#  endif
-#endif
+class Editor;
 
-#endif // LUAD_MAIN_H
+class Functions : public QTableWidget {
+    Q_OBJECT
+
+public:
+    Functions(Editor *editor);
+
+public slots:
+    void update();
+    void jump(int row);
+
+private:
+    Editor *editor;
+};
+
+#endif // LUAD_FUNCTIONS_HPP

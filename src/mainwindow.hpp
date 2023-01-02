@@ -15,17 +15,44 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef IMGUI_ADDONS_H
-#define IMGUI_ADDONS_H
+#ifndef LUAD_MAINWINDOW_H
+#define LUAD_MAINWINDOW_H
 
-#include <string_view>
+#include <QtWidgets>
+#include <QMenuBar>
 
-namespace ImGui {
-bool SelectableDetail(const char *label, bool &is_opened);
-bool InputTextWithReset(std::string_view label, char *buf, size_t buf_size, std::string_view default_buf);
-bool InputFloatWithReset(std::string_view label, float &val, float default_val, float step = 1.0f,
-                         const char *format = "%.3f");
-bool InputIntWithReset(std::string_view label, int &val, int default_val, int step = 1);
-}
+#include "editor/editor.hpp"
+#include "editor/functions.hpp"
+#include "settings.hpp"
 
-#endif // IMGUI_ADDONS_H
+class MainWindow : public QMainWindow {
+    Q_OBJECT
+
+public:
+    MainWindow(QWidget *parent = nullptr);
+    
+    void closeEvent(QCloseEvent *event) override;
+
+public slots:
+    void open();
+    void jumpTo();
+
+private:
+    void initializeMenubar();
+    void initializeEditor();
+
+    void readSettings();
+    void writeSettings();
+
+    const QString WINDOW_SIZE_KEY     = "window_size";
+    const QString WINDOW_POSITION_KEY = "window_position";
+
+    QMenu *viewMenu;
+
+    Editor *editor;
+    Functions *functions;
+
+    Settings *settings = Settings::instance();
+};
+
+#endif // LUAD_MAINWINDOW_H

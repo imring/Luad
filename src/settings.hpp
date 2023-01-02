@@ -15,31 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef IMGUI_NOTF_H
-#define IMGUI_NOTF_H
+#ifndef LUAD_SETTINGS_HPP
+#define LUAD_SETTINGS_HPP
 
-#include <chrono>
+#include <QSettings>
+#include <QString>
+#include <QVariant>
 
-#include <imgui.h>
+class Settings {
+public:
+    void     setValue(const QString &key, const QVariant &value);
+    QVariant value(const QString &key, const QVariant &defaultValue = {}) const;
 
-namespace ImGuiNotf {
-struct Style {
-  ImVec4 text;
-  ImVec4 background;
+    static Settings *instance();
+
+private:
+    Settings() = default;
+
+    QSettings settings;
 };
 
-void Add(std::string_view text, std::chrono::milliseconds ms, const Style &style);
-void Render();
-
-Style NormalStyle();
-Style InfoStyle();
-Style ErrorStyle();
-
-inline struct {
-  ImVec2 padding = {10.f, 10.f};
-  ImVec2 size = {200.f, 0.f};
-  float animspeed = 0.3f;
-} settings;
-} // namespace ImGuiNotf
-
-#endif // IMGUI_NOTF_H
+#endif // LUAD_SETTINGS_HPP

@@ -15,8 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifdef LUAD_WINDOWS
-#include "windows/convert.hpp"
-#elif LUAD_UNIX
-#include "unix/convert.hpp"
-#endif
+#include "settings.hpp"
+
+void Settings::setValue(const QString &key, const QVariant &value) {
+    settings.setValue(key, value);
+}
+
+QVariant Settings::value(const QString &key, const QVariant &defaultValue) const {
+    return settings.value(key, defaultValue);
+}
+
+Settings *Settings::instance() {
+    static Settings singleton;
+    return &singleton;
+}
