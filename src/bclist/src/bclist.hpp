@@ -40,19 +40,23 @@ public:
 
     struct div {
         struct line : public std::string {
-            size_t from;
-            size_t to;
+            std::string key;
+            size_t      from;
+            size_t      to;
 
-            explicit line(std::string_view str = {}, size_t f = 0, size_t t = 0) : std::string{str}, from(f), to(t) {}
+            explicit line(std::string_view str = {}, size_t f = 0, size_t t = 0, std::string_view k = {}) : std::string{str}, from{f}, to{t}, key{k} {}
         };
 
-        size_t            tab    = 0;
-        std::string       header = {}, footer = {};
-        std::vector<line> lines      = {};
-        std::vector<div>  additional = {};
+        std::string       key;
+        size_t            tab = 0;
+        std::string       header, footer;
+        std::vector<line> lines;
+        std::vector<div>  additional;
 
         template <typename... Args>
         void new_line(size_t from = bclist::max_line, size_t size = 0, std::string_view str = {}, Args... args);
+        template <typename... Args>
+        void new_line(std::string_view key, size_t from = bclist::max_line, size_t size = 0, std::string_view str = {}, Args... args);
         void empty_line(size_t p = bclist::max_line);
         void add_div(const div &d);
 
@@ -78,6 +82,11 @@ public:
         d.new_line<Args...>(offset, size, str, std::forward<Args>(args)...);
         offset += size;
     }
+    template <typename... Args>
+    void new_line(div &d, std::string_view key, size_t size, std::string_view str, Args... args) {
+        d.new_line<Args...>(key, offset, size, str, std::forward<Args>(args)...);
+        offset += size;
+    }
 
     div               divs;
     dislua::dump_info info;
@@ -96,6 +105,15 @@ void bclist::div::new_line(size_t from, size_t size, std::string_view str, Args.
         lines.emplace_back(str, from, to);
     else
         lines.emplace_back(fmt::format(fmt::runtime(str), args...), from, to);
+}
+
+template <typename... Args>
+void bclist::div::new_line(std::string_view key, size_t from, size_t size, std::string_view str, Args... args) {
+    const size_t to = size == 0 ? from : from + size - 1;
+    if constexpr (sizeof...(args) == 0)
+        lines.emplace_back(str, from, to, key);
+    else
+        lines.emplace_back(fmt::format(fmt::runtime(str), args...), from, to, key);
 }
 
 #endif // BCLIST_H

@@ -4,6 +4,7 @@ add_executable(luad
     "editor/editor.cpp"
     "editor/functions.cpp"
     "editor/highlighter.cpp"
+    "editor/variables.cpp"
 
     "main.cpp"
     "mainwindow.cpp"

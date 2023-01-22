@@ -553,11 +553,12 @@ bclist::div bcproto_lj::uvdata() {
     bclist::div res;
     if (ref().uv.empty())
         return res;
-    res.header = ".uvdata";
+    res.key = "uvdata";
+    res.header = "." + res.key;
 
     for (size_t i = 0; i < ref().uv.size(); i++) {
         const dislua::ushort uv = ref().uv[i];
-        parent->new_line(res, sizeof(dislua::ushort), "{} = 0x{:04X}", get_uv(i), uv);
+        parent->new_line(res, get_uv(i), sizeof(dislua::ushort), "{} = 0x{:04X}", get_uv(i), uv);
     }
     res.empty_line();
 
@@ -581,7 +582,7 @@ bclist::div bcproto_lj::kgc() {
             [](std::complex<double> v)      -> std::string { return fmt::format("({}+{}i)", v.real(), v.imag()); },
             [&](const std::string &str)     -> std::string { return parent->fix_string(str); }
         }, kgc);
-        parent->new_line(res, kgc_size(kgc), "{} = {}", get_kgc(i, index), val);
+        parent->new_line(res, get_kgc(i, index), kgc_size(kgc), "{} = {}", get_kgc(i, index), val);
     }
     res.empty_line();
 
@@ -605,7 +606,7 @@ bclist::div bcproto_lj::knum() {
             size = bclist_lj::uleb128_33_size(v[0]) + bclist_lj::uleb128_size(v[1]);
         }
 
-        parent->new_line(res, size, "{} = {}", get_knum(i), num);
+        parent->new_line(res, get_knum(i), size, "{} = {}", get_knum(i), num);
     }
     res.empty_line();
 
@@ -613,9 +614,13 @@ bclist::div bcproto_lj::knum() {
 }
 
 bclist::div bcproto_lj::operator()() {
-    bclist::div res = {.tab = 1, .header = fmt::format("proto{} do", proto_id), .footer = "end\n"};
+    bclist::div res = {.tab = 1, .footer = "end\n"};
+    res.key = fmt::format("proto{}", proto_id);
+    res.header = res.key + " do";
 
-    bclist::div pinfo = {.header = ".info"};
+    bclist::div pinfo;
+    pinfo.key = "info";
+    pinfo.header = "." + pinfo.key;
 
     dislua::uleb128 debug_size = 0;
     if (parent->is_debug())
@@ -673,7 +678,8 @@ void bclist_lj::update() {
     divs.add_div(compiler);
 
     div header;
-    header.header = ".header";
+    header.key = "header";
+    header.header = "." + header.key;
 
     if (dislua::uint flags = info.header.flags) {
         new_line(header, uleb128_size(flags), "flags = 0b{} -- {}", std::bitset<8>(flags).to_string(), header_flags());

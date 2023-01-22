@@ -28,10 +28,9 @@ void Functions::update() {
     const auto ptr = editor->ptrinfo();
     setRowCount(ptr->divs.additional.size() - 2);
     for (int i = 2; i < ptr->divs.additional.size(); i++) { // "i = 2" to exclude compiler & header info
-        const bclist::div &div  = ptr->divs.additional[i];
-        std::string        head = div.header.substr(0, div.header.size() - 3); // remove " do"
+        const bclist::div &div = ptr->divs.additional[i];
 
-        QTableWidgetItem *name = new QTableWidgetItem{QString::fromStdString(head)};
+        QTableWidgetItem *name = new QTableWidgetItem{QString::fromStdString(div.key)};
         name->setFlags(name->flags() & ~Qt::ItemIsEditable);
         setItem(i - 2, 0, name);
 

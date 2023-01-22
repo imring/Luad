@@ -15,47 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_MAINWINDOW_H
-#define LUAD_MAINWINDOW_H
+#ifndef LUAD_VARIABLES_HPP
+#define LUAD_VARIABLES_HPP
 
 #include <QtWidgets>
-#include <QMenuBar>
+#include <QTableWidget>
 
-#include "editor/editor.hpp"
-#include "editor/functions.hpp"
-#include "editor/variables.hpp"
+class Editor;
 
-#include "settings.hpp"
-
-class MainWindow : public QMainWindow {
+class Variables : public QTableWidget {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    
-    void closeEvent(QCloseEvent *event) override;
+    Variables(Editor *editor);
 
 public slots:
-    void open();
-    void jumpTo();
+    void update();
+    void jump(int row);
 
 private:
-    void initializeMenubar();
-    void initializeEditor();
-
-    void readSettings();
-    void writeSettings();
-
-    const QString WINDOW_SIZE_KEY     = "window_size";
-    const QString WINDOW_POSITION_KEY = "window_position";
-
-    QMenu *viewMenu;
-
     Editor *editor;
-    Functions *functions;
-    Variables *variables;
-
-    Settings *settings = Settings::instance();
 };
 
-#endif // LUAD_MAINWINDOW_H
+#endif // LUAD_VARIABLES_HPP

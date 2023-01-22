@@ -70,6 +70,13 @@ void MainWindow::initializeEditor() {
     dock->setWidget(functions);
     addDockWidget(Qt::TopDockWidgetArea, dock);
     viewMenu->addAction(dock->toggleViewAction());
+
+    dock = new QDockWidget(tr("Variables"), this);
+    dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+    variables = new Variables(editor);
+    dock->setWidget(variables);
+    addDockWidget(Qt::TopDockWidgetArea, dock);
+    viewMenu->addAction(dock->toggleViewAction());
 }
 
 void MainWindow::readSettings() {
