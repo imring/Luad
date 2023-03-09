@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,9 +21,6 @@
 #include "bclist.hpp"
 
 class bclist_lj : public bclist {
-    std::vector<size_t> temp_protos_id;
-    friend class bcproto_lj;
-
 protected:
     static size_t uleb128_size(dislua::uleb128 val);
     static size_t uleb128_33_size(dislua::uleb128 val);
@@ -49,6 +46,11 @@ public:
     static inline const std::string                 unkval = "invalid";
 
     void update() override;
+
+private:
+    std::vector<size_t> temp_protos_id;
+
+    friend class bcproto_lj;
 };
 
 #endif // BCLIST_LJ_H

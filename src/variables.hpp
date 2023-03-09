@@ -15,19 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <QApplication>
+#ifndef LUAD_VARIABLES_HPP
+#define LUAD_VARIABLES_HPP
 
-#include "mainwindow.hpp"
+#include <QTableWidget>
 
-int main(int argc, char *argv[]) {
-    QCoreApplication::setOrganizationName("imring");
-    QCoreApplication::setOrganizationDomain("imring.dev");
-    QCoreApplication::setApplicationName("Luad");
+#include "file.hpp"
 
-    QApplication a{argc, argv};
+class Disassembler;
 
-    MainWindow win;
-    win.show();
+class Variables : public QTableWidget {
+    Q_OBJECT
 
-    return a.exec();
-}
+public:
+    Variables(Disassembler *disasm, std::weak_ptr<File> file);
+
+    void update();
+
+public slots:
+    void jump(int row);
+
+private:
+    Disassembler       *disassembler;
+    std::weak_ptr<File> file;
+};
+
+#endif // LUAD_VARIABLES_HPP

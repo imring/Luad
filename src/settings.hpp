@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
 #ifndef LUAD_SETTINGS_HPP
 #define LUAD_SETTINGS_HPP
 
-#include <QSettings>
 #include <QString>
 #include <QVariant>
+#include <QSettings>
 
 class Settings {
 public:
@@ -28,6 +28,9 @@ public:
     QVariant value(const QString &key, const QVariant &defaultValue = {}) const;
 
     static Settings *instance();
+
+    static inline const QString windowSizeKey     = "window_size";
+    static inline const QString windowPositionKey = "window_position";
 
 private:
     Settings() = default;

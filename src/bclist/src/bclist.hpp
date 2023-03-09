@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #ifndef BCLIST_H
 #define BCLIST_H
 
+#include <map>
 #include <memory>
 
 #include <fmt/format.h>
@@ -88,9 +89,13 @@ public:
         offset += size;
     }
 
-    div               divs;
-    dislua::dump_info info;
-    options           option;
+    void add_ref(std::size_t key, std::size_t value);
+    void add_ref(std::size_t key, std::vector<std::size_t> values);
+
+    std::map<size_t, std::vector<size_t>> refs;
+    div                                   divs;
+    dislua::dump_info                     info;
+    options                               option;
 
     static std::unique_ptr<bclist> get_list(const dislua::dump_info &info);
 

@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,11 +47,13 @@ std::string bclist::div::string(bool from) const {
     //      [](const std::string &v, const bclist::div::line &l) {return v + fmt::format("{:08X}: {}\n", l.from, l); });
 
     std::string res;
-    for (const bclist::div::line &l: onl.lines)
-        if (from)
+    for (const bclist::div::line &l: onl.lines) {
+        if (from) {
             res += fmt::format("{:08X}: {}\n", l.from, l);
-        else
+        } else {
             res += l + '\n';
+        }
+    }
     res.pop_back(); // remove last \n
     return res;
 }
@@ -67,11 +69,11 @@ bclist::div bclist::div::only_lines() const {
     std::vector<bclist::div::line> res;
     static const auto              add_line = [](std::vector<bclist::div::line> &ls, const bclist::div::line &l, const std::string &t) {
         for (const std::string &line: split(l, "\n"))
-            ls.emplace_back(t + line, l.from, l.to);
+            ls.emplace_back(t + line, l.from, l.to, l.key);
     };
 
     if (!header.empty())
-        add_line(res, bclist::div::line{header, st, st}, prev_tab);
+        add_line(res, bclist::div::line{header, st, st, key}, prev_tab);
     for (const bclist::div::line &line: lines)
         add_line(res, line, cur_tab);
     for (const div &add: additional) {
@@ -135,6 +137,26 @@ void bclist::div::empty_line(size_t p) {
 void bclist::div::add_div(const bclist::div &d) {
     if (!d.empty())
         additional.push_back(d);
+}
+
+void bclist::add_ref(std::size_t key, std::size_t value) {
+    auto it = refs.find(key);
+    if (it == refs.end()) {
+        refs.emplace(key, std::vector<std::size_t>{ value });
+    } else {
+        it->second.push_back(value);
+    }
+}
+
+void bclist::add_ref(std::size_t key, std::vector<std::size_t> values) {
+    auto it = refs.find(key);
+    if (it == refs.end()) {
+        refs.emplace(key, values);
+    } else {
+        for (const auto &v: values) {
+            it->second.push_back(v);
+        }
+    }
 }
 
 std::unique_ptr<bclist> bclist::get_list(const dislua::dump_info &info) {

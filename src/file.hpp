@@ -15,19 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <QApplication>
+#ifndef LUAD_FILE_HPP
+#define LUAD_FILE_HPP
 
-#include "mainwindow.hpp"
+#include <QString>
 
-int main(int argc, char *argv[]) {
-    QCoreApplication::setOrganizationName("imring");
-    QCoreApplication::setOrganizationDomain("imring.dev");
-    QCoreApplication::setApplicationName("Luad");
+#include "bclist.hpp"
 
-    QApplication a{argc, argv};
+struct File {
+    QString                 path;
+    std::unique_ptr<bclist> dump_info;
 
-    MainWindow win;
-    win.show();
+    File() = default;
+    File(QString path);
 
-    return a.exec();
-}
+    bool open(QString path);
+    bool save();
+    void close();
+
+    bool is_opened() const {
+        return !path.isEmpty() && dump_info;
+    };
+};
+
+#endif // LUAD_FILE_HPP

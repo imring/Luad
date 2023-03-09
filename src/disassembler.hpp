@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,66 +15,67 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_EDITOR_HPP
-#define LUAD_EDITOR_HPP
+#ifndef LUAD_DISASSEMBLER_HPP
+#define LUAD_DISASSEMBLER_HPP
 
-#include <QtWidgets>
 #include <QPlainTextEdit>
 
-#include "bclist.hpp"
-#include "highlighter.hpp"
+#include "file.hpp"
+#include "syntaxhighlighter.hpp"
 
 class LineNumberArea;
+class XrefMenu;
 
-class Editor : public QPlainTextEdit {
+class Disassembler : public QPlainTextEdit {
     Q_OBJECT
 
 public:
-    Editor(QWidget *parent = nullptr);
+    Disassembler(QWidget *parent = nullptr, std::weak_ptr<File> file = {});
 
     void lineNumberAreaPaintEvent(QPaintEvent *event);
     int  lineNumberAreaWidth() const;
 
-    void open(QString path);
-    bool jump(int addr);
-
-    const bclist *ptrinfo() const { return ptr.get(); }
+    bool jump(std::size_t addr, bool last = false);
+    bool jump(std::string_view name);
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
 signals:
-    void onOpenFile(QString path = "");
+    void showXref(const QString &name, XrefMenu *menu);
 
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();
     void updateLineNumberArea(const QRect &rect, int dy);
+    void showContextMenu(const QPoint &pos);
 
 private:
-    LineNumberArea *lineNumberArea;
-    Highlighter    *highlighter;
+    LineNumberArea    *lineNumberArea;
+    SyntaxHighlighter *syntaxHighlighter;
 
-    QString                        filepath;
-    std::unique_ptr<bclist>        ptr;
-    std::vector<bclist::div::line> lines;
+    QMenu *contextMenu;
+
+    std::weak_ptr<File>                     file;
+    std::vector<bclist::div::line>          lines;
+    std::map<std::string_view, std::size_t> addrKeys;
 };
 
 class LineNumberArea : public QWidget {
 public:
-    LineNumberArea(Editor *editor) : QWidget{editor}, editor{editor} {}
+    LineNumberArea(Disassembler *disasm) : QWidget{disasm}, disasm{disasm} {}
 
     QSize sizeHint() const override {
-        return QSize(editor->lineNumberAreaWidth(), 0);
+        return QSize(disasm->lineNumberAreaWidth(), 0);
     }
 
 protected:
     void paintEvent(QPaintEvent *event) override {
-        editor->lineNumberAreaPaintEvent(event);
+        disasm->lineNumberAreaPaintEvent(event);
     }
 
 private:
-    Editor *editor;
+    Disassembler *disasm;
 };
 
-#endif // LUAD_EDITOR_HPP
+#endif // LUAD_DISASSEMBLER_HPP

@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,18 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_HIGHLIGHTER_HPP
-#define LUAD_HIGHLIGHTER_HPP
+#ifndef LUAD_SYNTAXHIGHLIGHTER_HPP
+#define LUAD_SYNTAXHIGHLIGHTER_HPP
 
-#include <QSyntaxHighlighter>
 #include <QTextCharFormat>
 #include <QRegularExpression>
+#include <QSyntaxHighlighter>
 
-class Highlighter : public QSyntaxHighlighter {
+class SyntaxHighlighter : public QSyntaxHighlighter {
     Q_OBJECT
 
 public:
-    Highlighter(QTextDocument *parent = 0);
+    SyntaxHighlighter(QTextDocument *parent = nullptr);
 
 protected:
     void highlightBlock(const QString &text) override;
@@ -50,4 +50,4 @@ private:
     QTextCharFormat numhexFormat;
 };
 
-#endif // LUAD_HIGHLIGHTER_HPP
+#endif // LUAD_SYNTAXHIGHLIGHTER_HPP

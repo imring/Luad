@@ -1,5 +1,3 @@
-include(FetchContent)
-
 set(DISLUA_INSTALL OFF)
 set(DISLUA_TESTS   OFF)
 

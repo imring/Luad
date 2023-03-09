@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,26 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_VARIABLES_HPP
-#define LUAD_VARIABLES_HPP
+#ifndef LUAD_UTILS_HPP
+#define LUAD_UTILS_HPP
 
-#include <QtWidgets>
-#include <QTableWidget>
+#include <vector>
 
-class Editor;
+#include "bclist.hpp"
 
-class Variables : public QTableWidget {
-    Q_OBJECT
+namespace utils {
+std::size_t line_by_addr(const std::vector<bclist::div::line> &lines, std::size_t addr, bool last = false);
+} // namespace utils
 
-public:
-    Variables(Editor *editor);
-
-public slots:
-    void update();
-    void jump(int row);
-
-private:
-    Editor *editor;
-};
-
-#endif // LUAD_VARIABLES_HPP
+#endif // LUAD_UTILS_HPP

@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -57,8 +57,11 @@ class bcproto_lj {
     size_t proto_id = 0;
     bclist_lj *parent;
 
+    std::map<std::size_t, std::vector<std::size_t>> temp_refs; // only uv/kgc/knum
 public:
     explicit bcproto_lj(bclist_lj *list, size_t _proto) : parent{list}, proto_id{_proto} {}
+
+    void add_temp_ref(std::size_t key, std::size_t value);
 
     [[nodiscard]] static size_t knum_size(double val);
     [[nodiscard]] static size_t kgc_size(const dislua::kgc_t &v);
@@ -108,7 +111,7 @@ public:
         return parent->info.protos[proto_id];
     }
     [[nodiscard]] std::string flags() const;
-    [[nodiscard]] std::string fill_field(size_t i, int nfield) const;
+    [[nodiscard]] std::string fill_field(size_t i, int nfield);
 
     bclist::div ins();
     bclist::div uvdata();
@@ -117,6 +120,15 @@ public:
     // bclist::div varnames();
     bclist::div operator()();
 };
+
+void bcproto_lj::add_temp_ref(std::size_t key, std::size_t value) {
+    auto it = temp_refs.find(key);
+    if (it == temp_refs.end()) {
+        temp_refs.emplace(key, std::vector<std::size_t>{ value });
+    } else {
+        it->second.push_back(value);
+    }
+}
 
 size_t bclist_lj::uleb128_size(dislua::uleb128 val) {
     size_t res = 1;
@@ -430,7 +442,7 @@ std::string bcproto_lj::flags() const {
     return res;
 }
 
-std::string bcproto_lj::fill_field(size_t i, int nfield) const {
+std::string bcproto_lj::fill_field(size_t i, int nfield) {
     std::string res;
     const auto  ins  = ref().ins[i];
     const int   mode = parent->get_mode(ins.opcode);
@@ -458,24 +470,30 @@ std::string bcproto_lj::fill_field(size_t i, int nfield) const {
     }
 
     const size_t ufield = static_cast<size_t>(field);
+    const size_t kgcidx = ref().kgc.size() - 1 - ufield;
     switch (m) {
     case lj::bcmode::uv:
+        add_temp_ref(ufield, parent->offset);
         res = get_uv(ufield);
         break;
     case lj::bcmode::pri:
         res = get_pri(ufield);
         break;
     case lj::bcmode::num:
+        add_temp_ref(ufield + ref().uv.size() + ref().kgc.size(), parent->offset);
         res = get_knum(ufield);
         break;
     case lj::bcmode::str:
-        res = get_kgc(ref().kgc.size() - 1 - ufield, lj::kgc::string);
+        add_temp_ref(kgcidx + ref().uv.size(), parent->offset);
+        res = get_kgc(kgcidx, lj::kgc::string);
         break;
     case lj::bcmode::tab:
-        res = get_kgc(ref().kgc.size() - 1 - ufield, lj::kgc::tab);
+        add_temp_ref(kgcidx + ref().uv.size(), parent->offset);
+        res = get_kgc(kgcidx, lj::kgc::tab);
         break;
     case lj::bcmode::func:
-        res = get_kgc(ref().kgc.size() - 1 - ufield, lj::kgc::child);
+        add_temp_ref(kgcidx + ref().uv.size(), parent->offset);
+        res = get_kgc(kgcidx, lj::kgc::child);
         break;
     case lj::bcmode::jump:
         res = get_label(ufield + i + 1 - 0x8000);
@@ -553,10 +571,14 @@ bclist::div bcproto_lj::uvdata() {
     bclist::div res;
     if (ref().uv.empty())
         return res;
-    res.key = "uvdata";
-    res.header = "." + res.key;
+    res.header = ".uvdata";
 
     for (size_t i = 0; i < ref().uv.size(); i++) {
+        auto refs = temp_refs.find(i);
+        if (refs != temp_refs.end()) {
+            parent->add_ref(parent->offset, refs->second);
+        }
+
         const dislua::ushort uv = ref().uv[i];
         parent->new_line(res, get_uv(i), sizeof(dislua::ushort), "{} = 0x{:04X}", get_uv(i), uv);
     }
@@ -572,10 +594,18 @@ bclist::div bcproto_lj::kgc() {
     res.header = ".kgc";
 
     for (size_t i = 0; i < ref().kgc.size(); i++) {
+        auto refs = temp_refs.find(i + ref().uv.size());
+        if (refs != temp_refs.end()) {
+            parent->add_ref(parent->offset, refs->second);
+        }
+
         const dislua::kgc_t   kgc   = ref().kgc[i];
         const dislua::uleb128 index = static_cast<dislua::uleb128>(kgc.index());
         const std::string val = std::visit(dislua::detail::overloaded{
-            [&](const dislua::proto_id &id) -> std::string { return "proto" + std::to_string(id.id); },
+            [&](const dislua::proto_id &id) -> std::string {
+                parent->add_ref(parent->divs.additional[id.id + 2].start(), parent->offset);
+                return "proto" + std::to_string(id.id);
+            },
             [&](const dislua::table_t &t)   -> std::string { return parent->table(t); },
             [](long long v)                 -> std::string { return std::to_string(v); },
             [](unsigned long long v)        -> std::string { return std::to_string(v); },
@@ -596,6 +626,11 @@ bclist::div bcproto_lj::knum() {
     res.header = ".knum";
 
     for (size_t i = 0; i < ref().knum.size(); i++) {
+        auto refs = temp_refs.find(i + ref().uv.size() + ref().kgc.size());
+        if (refs != temp_refs.end()) {
+            parent->add_ref(parent->offset, refs->second);
+        }
+
         const double num = ref().knum[i], snum = static_cast<double>(static_cast<int>(num)); // signed value
         size_t       size;
         if (dislua::detail::almost_equal(num, snum, 2))
@@ -619,8 +654,7 @@ bclist::div bcproto_lj::operator()() {
     res.header = res.key + " do";
 
     bclist::div pinfo;
-    pinfo.key = "info";
-    pinfo.header = "." + pinfo.key;
+    pinfo.header = ".info";
 
     dislua::uleb128 debug_size = 0;
     if (parent->is_debug())
@@ -668,7 +702,10 @@ bclist::div bcproto_lj::operator()() {
 // 1: header info
 // 2..: prototypes
 void bclist_lj::update() {
+    divs = {};
+    refs.clear();
     offset = 0;
+    temp_protos_id.clear();
 
     div compiler;
     compiler.empty_line(offset);
@@ -678,8 +715,7 @@ void bclist_lj::update() {
     divs.add_div(compiler);
 
     div header;
-    header.key = "header";
-    header.header = "." + header.key;
+    header.header = ".header";
 
     if (dislua::uint flags = info.header.flags) {
         new_line(header, uleb128_size(flags), "flags = 0b{} -- {}", std::bitset<8>(flags).to_string(), header_flags());

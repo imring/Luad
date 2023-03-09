@@ -1,7 +1,27 @@
-#include "variables.hpp"
-#include "editor.hpp"
+// Luad - Disassembler for compiled Lua scripts.
+// https://github.com/imring/Luad
+// Copyright (C) 2021-2023 Vitaliy Vorobets
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-Variables::Variables(Editor *editor) : QTableWidget{editor}, editor{editor} {
+#include "variables.hpp"
+
+#include <QHeaderView>
+
+#include "disassembler.hpp"
+
+Variables::Variables(Disassembler *disasm, std::weak_ptr<File> file) : QTableWidget{disasm}, disassembler{disasm}, file{file} {
     verticalHeader()->hide();
     horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -17,21 +37,22 @@ Variables::Variables(Editor *editor) : QTableWidget{editor}, editor{editor} {
 
     update();
 
-    connect(editor, &Editor::onOpenFile, this, &Variables::update);
     connect(this, &QTableWidget::cellDoubleClicked, this, &Variables::jump);
 }
 
 void Variables::update() {
     clearContents();
 
-    if (!editor || !editor->ptrinfo())
+    auto ptr = file.lock();
+    if (!ptr || !ptr->is_opened()) {
         return;
+    }
 
-    const auto ptr = editor->ptrinfo();
-    int rows = 0;
+    const auto &divs = ptr->dump_info->divs;
+    int         rows = 0;
     setRowCount(rows);
-    for (int i = 2; i < ptr->divs.additional.size(); i++) { // "i = 2" to exclude compiler & header info
-        const bclist::div &div = ptr->divs.additional[i];
+    for (int i = 2; i < divs.additional.size(); i++) { // "i = 2" to exclude compiler & header info
+        const bclist::div &div = divs.additional[i];
 
         int prev = -1;
         for (int l = 0; l < div.additional.size(); l++) {
@@ -69,9 +90,9 @@ void Variables::update() {
 }
 
 void Variables::jump(int row) {
-    const QTableWidgetItem *i    = item(row, 1); // start
-    const QString           val  = i->data(0).toString();
-    const int               addr = val.toInt(nullptr, 16);
-
-    editor->jump(addr);
+    const QTableWidgetItem *name    = item(row, 0);
+    const QString           namestr = name->data(0).toString();
+    if (disassembler) {
+        disassembler->jump(namestr.toStdString());
+    }
 }

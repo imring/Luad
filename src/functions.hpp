@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,23 +18,26 @@
 #ifndef LUAD_FUNCTIONS_HPP
 #define LUAD_FUNCTIONS_HPP
 
-#include <QtWidgets>
 #include <QTableWidget>
 
-class Editor;
+#include "file.hpp"
+
+class Disassembler;
 
 class Functions : public QTableWidget {
     Q_OBJECT
 
 public:
-    Functions(Editor *editor);
+    Functions(Disassembler *disasm, std::weak_ptr<File> file);
+
+    void update();
 
 public slots:
-    void update();
     void jump(int row);
 
 private:
-    Editor *editor;
+    Disassembler       *disassembler;
+    std::weak_ptr<File> file;
 };
 
 #endif // LUAD_FUNCTIONS_HPP
