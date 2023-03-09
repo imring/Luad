@@ -1,6 +1,8 @@
-BasedOnStyle: LLVM
 Language: Cpp
-Standard: c++20
+Standard: c++17
+IndentWidth: 4
+AccessModifierOffset: -4
+BasedOnStyle: LLVM
 AlignEscapedNewlines: Left
 AlwaysBreakTemplateDeclarations: Yes
 SpaceBeforeRangeBasedForLoopColon: false
@@ -9,4 +11,8 @@ SortIncludes: Never
 AllowShortFunctionsOnASingleLine: Empty
 IndentWrappedFunctionNames: false
 AlwaysBreakAfterDefinitionReturnType: None
-ColumnLimit: 120
+ColumnLimit: 160
+AllowShortLambdasOnASingleLine: Empty
+IndentRequires: true
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: Consecutive

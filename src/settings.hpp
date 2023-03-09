@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,15 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#if !defined(LUAD_CONSOLE_H) && defined(LUAD_WINDOWS)
-#define LUAD_CONSOLE_H
+#ifndef LUAD_SETTINGS_HPP
+#define LUAD_SETTINGS_HPP
 
-#include <string>
+#include <QString>
+#include <QVariant>
+#include <QSettings>
 
-#include <Windows.h>
+class Settings {
+public:
+    void     setValue(const QString &key, const QVariant &value);
+    QVariant value(const QString &key, const QVariant &defaultValue = {}) const;
 
-inline void hide_console() {
-  ShowWindow(GetConsoleWindow(), SW_HIDE);
-}
+    static Settings *instance();
 
-#endif // LUAD_CONSOLE_H
+    static inline const QString windowSizeKey     = "window_size";
+    static inline const QString windowPositionKey = "window_position";
+
+private:
+    Settings() = default;
+
+    QSettings settings;
+};
+
+#endif // LUAD_SETTINGS_HPP

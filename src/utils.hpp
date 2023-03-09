@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,31 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef IMGUI_NOTF_H
-#define IMGUI_NOTF_H
+#ifndef LUAD_UTILS_HPP
+#define LUAD_UTILS_HPP
 
-#include <chrono>
+#include <vector>
 
-#include <imgui.h>
+#include "bclist.hpp"
 
-namespace ImGuiNotf {
-struct Style {
-  ImVec4 text;
-  ImVec4 background;
-};
+namespace utils {
+std::size_t line_by_addr(const std::vector<bclist::div::line> &lines, std::size_t addr, bool last = false);
+} // namespace utils
 
-void Add(std::string_view text, std::chrono::milliseconds ms, const Style &style);
-void Render();
-
-Style NormalStyle();
-Style InfoStyle();
-Style ErrorStyle();
-
-inline struct {
-  ImVec2 padding = {10.f, 10.f};
-  ImVec2 size = {200.f, 0.f};
-  float animspeed = 0.3f;
-} settings;
-} // namespace ImGuiNotf
-
-#endif // IMGUI_NOTF_H
+#endif // LUAD_UTILS_HPP

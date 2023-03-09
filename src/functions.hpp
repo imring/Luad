@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,17 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef IMGUI_ADDONS_H
-#define IMGUI_ADDONS_H
+#ifndef LUAD_FUNCTIONS_HPP
+#define LUAD_FUNCTIONS_HPP
 
-#include <string_view>
+#include <QTableWidget>
 
-namespace ImGui {
-bool SelectableDetail(const char *label, bool &is_opened);
-bool InputTextWithReset(std::string_view label, char *buf, size_t buf_size, std::string_view default_buf);
-bool InputFloatWithReset(std::string_view label, float &val, float default_val, float step = 1.0f,
-                         const char *format = "%.3f");
-bool InputIntWithReset(std::string_view label, int &val, int default_val, int step = 1);
-}
+#include "file.hpp"
 
-#endif // IMGUI_ADDONS_H
+class Disassembler;
+
+class Functions : public QTableWidget {
+    Q_OBJECT
+
+public:
+    Functions(Disassembler *disasm, std::weak_ptr<File> file);
+
+    void update();
+
+public slots:
+    void jump(int row);
+
+private:
+    Disassembler       *disassembler;
+    std::weak_ptr<File> file;
+};
+
+#endif // LUAD_FUNCTIONS_HPP

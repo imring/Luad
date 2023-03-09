@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,54 +15,50 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <fstream>
-#include <iterator>
-
 #include "file.hpp"
 
-luac_file::luac_file(const std::filesystem::path &p)
-    : e{errors::no}, _path{p} {
-  if (!std::filesystem::is_regular_file(p)) {
-    e = errors::is_file;
-    return;
-  }
+#include <QFile>
+#include <QMessageBox>
 
-  std::ifstream luac{p, std::ios::binary};
-  if (luac.fail()) {
-    e = errors::open_file;
-    return;
-  }
-
-  dislua::buffer buf((std::istreambuf_iterator<char>(luac)),
-                     std::istreambuf_iterator<char>());
-  _info = dislua::read_all(buf);
-  if (!_info)
-    e = errors::parse;
-  luac.close();
+File::File(QString path) {
+    open(path);
 }
 
-void luac_file::write(bool verification) {
-  if (verification) {
-    std::unique_ptr<dislua::dump_info> cinfo;
-    switch (_info->compiler()) {
-    case dislua::compilers::luajit:
-      cinfo = std::make_unique<dislua::lj::parser>(*_info);
-      break;
-    default:
-      cinfo = std::make_unique<dislua::dump_info>(*_info);
-      break;
+bool File::open(QString p) {
+    QFile f{p};
+    if (!f.open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(nullptr, "Warning", "Cannot open file: " + f.errorString());
+        return false;
     }
-    cinfo->write();
-    cinfo->read();
-  }
 
-  _info->write();
+    const QByteArray blob = f.readAll();
+    dislua::buffer   buf(blob.begin(), blob.end());
+    auto             info = dislua::read_all(buf);
+    if (!info) {
+        QMessageBox::warning(nullptr, "Warning", "Unknown compiler of Lua script.");
+        return false;
+    }
+
+    path      = p;
+    dump_info = bclist::get_list(*info);
+    dump_info->update();
+    return true;
 }
 
-void luac_file::save(bool verification) {
-  write(verification);
-  std::ofstream luac(_path, std::ios::binary);
-  std::vector<dislua::uchar> buf = _info->buf.copy_data();
-  std::copy(buf.begin(), buf.end(), std::ostream_iterator<char>(luac));
-  luac.close();
+bool File::save() {
+    dump_info->info.write();
+    QFile f{path};
+    if (!f.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(nullptr, "Warning", "Cannot open file: " + f.errorString());
+        return false;
+    }
+
+    const auto buf = dump_info->info.buf.copy_data();
+    f.write(std::bit_cast<const char *>(buf.data()), buf.size());
+    return true;
+}
+
+void File::close() {
+    path = "";
+    dump_info.reset();
 }

@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,36 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_FILE_H
-#define LUAD_FILE_H
+#ifndef LUAD_FILE_HPP
+#define LUAD_FILE_HPP
 
-#include <filesystem>
+#include <QString>
 
-#include "dislua/dislua.hpp"
+#include "bclist.hpp"
 
-class luac_file {
-public:
-  enum class errors {
-    no,
-    is_file,
-    open_file,
-    parse
-  };
+struct File {
+    QString                 path;
+    std::unique_ptr<bclist> dump_info;
 
-  luac_file(luac_file &f) : e(f.e), _path(f._path), _info(std::move(f._info)) {}
-  explicit luac_file(const std::filesystem::path &p);
+    File() = default;
+    File(QString path);
 
-  void write(bool verification = true);
-  void save(bool verification = true);
+    bool open(QString path);
+    bool save();
+    void close();
 
-  [[nodiscard]] errors error() const { return e; }
-  [[nodiscard]] std::filesystem::path path() const { return _path; }
-  [[nodiscard]] dislua::dump_info *info() const { return _info.get(); }
-
-protected:
-  errors e;
-  std::filesystem::path _path;
-  std::unique_ptr<dislua::dump_info> _info;
+    bool is_opened() const {
+        return !path.isEmpty() && dump_info;
+    };
 };
 
-#endif // LUAD_FILE_H
+#endif // LUAD_FILE_HPP

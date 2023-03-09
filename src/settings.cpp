@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,18 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_MAIN_H
-#define LUAD_MAIN_H
+#include "settings.hpp"
 
-#define LUAD_VERSION 20L
+void Settings::setValue(const QString &key, const QVariant &value) {
+    settings.setValue(key, value);
+}
 
-#if defined(unix) || defined(__unix__) || defined(__unix)
-#  define LUAD_UNIX
-#elif defined(_WIN32)
-#  define LUAD_WINDOWS
-#  if defined(UNICODE) || defined(_UNICODE)
-#    define LUAD_WINUNICODE
-#  endif
-#endif
+QVariant Settings::value(const QString &key, const QVariant &defaultValue) const {
+    return settings.value(key, defaultValue);
+}
 
-#endif // LUAD_MAIN_H
+Settings *Settings::instance() {
+    static Settings singleton;
+    return &singleton;
+}

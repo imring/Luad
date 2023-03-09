@@ -1,0 +1,179 @@
+// Luad - Disassembler for compiled Lua scripts.
+// https://github.com/imring/Luad
+// Copyright (C) 2021-2023 Vitaliy Vorobets
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#include "mainwindow.hpp"
+
+#include <QMenuBar>
+#include <QDockWidget>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QInputDialog>
+#include <QCoreApplication>
+
+#include "xrefmenu.hpp"
+#include "settings.hpp"
+#include "functions.hpp"
+#include "variables.hpp"
+#include "disassembler.hpp"
+
+MainWindow::MainWindow(QWidget *parent) : QMainWindow{parent}, file{std::make_shared<File>()} {
+    setWindowTitle("Luad");
+
+    readSettings();
+    initializeMenubar();
+
+    connect(this, &MainWindow::openFile, this, &MainWindow::initializeDisassembler);
+}
+
+void MainWindow::openFileDialog() {
+    if (file->is_opened()) {
+        closeFile();
+    }
+    const QString path = QFileDialog::getOpenFileName(this, tr("Open"), "", tr("Compiled lua script (*.luac)"));
+    if (!path.isEmpty() && file->open(path)) {
+        closeFileAction->setEnabled(true);
+        jumpAction->setEnabled(true);
+
+        emit openFile(file);
+    }
+}
+
+void MainWindow::closeFile() {
+    file->close();
+    closeFileAction->setEnabled(false);
+    jumpAction->setEnabled(false);
+
+    removeDock(variables);
+    removeDock(functions);
+    removeDock(disassembler);
+    if (xref) {
+        removeDock(xref);
+    }
+}
+
+void MainWindow::jumpDialog() {
+    if (!file->is_opened()) { // script is not open
+        return;
+    }
+
+    QInputDialog dialog{this};
+    dialog.setWindowTitle("Jump to...");
+    dialog.setLabelText("Enter the address in hex or the variable name:");
+
+    bool    ok;
+    QString text = QInputDialog::getText(this, tr("Jump to..."), tr("Enter the address in hex:"), QLineEdit::Normal, {}, &ok);
+    if (!ok) {
+        return;
+    }
+
+    Disassembler *disasm = qobject_cast<Disassembler *>(disassembler->widget());
+    if (disasm->jump(text.toStdString())) {
+        return;
+    }
+
+    const int addr = text.toInt(&ok, 16);
+    if (!ok || !disasm->jump(addr)) {
+        QMessageBox::warning(this, "Warning", "Invalid address or variable name.");
+        return;
+    }
+}
+
+void MainWindow::initializeDisassembler(std::weak_ptr<File> file) {
+    Disassembler *disasm = new Disassembler{this, file};
+    disassembler         = addDock(tr("Disassembler"), disasm);
+
+    Functions *funcs = new Functions{disasm, file};
+    functions        = addDock(tr("Functions"), funcs);
+    Variables *vars  = new Variables{disasm, file};
+    variables        = addDock(tr("Variables"), vars);
+
+    connect(disasm, &Disassembler::showXref, this, &MainWindow::showXref);
+}
+
+void MainWindow::showXref(const QString &name, XrefMenu *menu) {
+    if (xref) {
+        xref->setWidget(menu);
+        xref->setWindowTitle(name);
+    } else {
+        xref = addDock(name, menu);
+    }
+}
+
+void MainWindow::initializeMenubar() {
+    QMenu   *fileMenu = menuBar()->addMenu(tr("&File"));
+    QAction *openFile = new QAction{"&Open", this};
+    openFile->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_O});
+    fileMenu->addAction(openFile);
+
+    closeFileAction = new QAction{"&Close", this};
+    closeFileAction->setEnabled(false);
+    fileMenu->addAction(closeFileAction);
+
+    fileMenu->addSeparator();
+
+    QAction *exit = new QAction{"&Exit", this};
+    exit->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_Q});
+    fileMenu->addAction(exit);
+
+    QMenu *editMenu = menuBar()->addMenu(tr("&Edit"));
+    jumpAction      = new QAction{"&Jump to address", this};
+    jumpAction->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_G});
+    jumpAction->setEnabled(false);
+    editMenu->addAction(jumpAction);
+
+    viewMenu = menuBar()->addMenu(tr("&View"));
+
+    connect(openFile, &QAction::triggered, this, &MainWindow::openFileDialog);
+    connect(closeFileAction, &QAction::triggered, this, &MainWindow::closeFile);
+    connect(exit, &QAction::triggered, this, &QCoreApplication::exit);
+    connect(jumpAction, &QAction::triggered, this, &MainWindow::jumpDialog);
+}
+
+QDockWidget *MainWindow::addDock(const QString &title, QWidget *widget, Qt::DockWidgetArea area) {
+    QDockWidget *dockWidget = new QDockWidget{title, this};
+    dockWidget->setAllowedAreas(Qt::AllDockWidgetAreas);
+    dockWidget->setWidget(widget);
+    addDockWidget(area, dockWidget);
+    viewMenu->addAction(dockWidget->toggleViewAction());
+    return dockWidget;
+}
+
+void MainWindow::removeDock(QDockWidget *&widget) {
+    viewMenu->removeAction(widget->toggleViewAction());
+    removeDockWidget(widget);
+    widget = nullptr;
+}
+
+// settings
+void MainWindow::readSettings() {
+    Settings      *settings = Settings::instance();
+    const QVariant size     = settings->value(Settings::windowSizeKey, QSize{800, 600});
+    resize(size.toSize());
+
+    const QVariant pos = settings->value(Settings::windowPositionKey, QPoint{40, 40});
+    move(pos.toPoint());
+}
+
+void MainWindow::writeSettings() {
+    Settings *settings = Settings::instance();
+    settings->setValue(Settings::windowSizeKey, size());
+    settings->setValue(Settings::windowPositionKey, pos());
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+    writeSettings();
+}

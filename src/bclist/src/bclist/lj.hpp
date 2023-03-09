@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,31 +21,36 @@
 #include "bclist.hpp"
 
 class bclist_lj : public bclist {
-  std::vector<size_t> temp_protos_id;
-  friend class bcproto_lj;
-
 protected:
-  static size_t uleb128_size(dislua::uleb128 val);
-  static size_t uleb128_33_size(dislua::uleb128 val);
-  static size_t uleb128_sizes(auto &&v);
-  static size_t table_kv_size(const dislua::table_val_t &v);
-  static size_t table_size(dislua::table_t t);
+    static size_t uleb128_size(dislua::uleb128 val);
+    static size_t uleb128_33_size(dislua::uleb128 val);
+    static size_t uleb128_sizes(auto &&v);
+    static size_t table_kv_size(const dislua::table_val_t &v);
+    static size_t table_size(dislua::table_t t);
 
-  [[nodiscard]] bool is_debug() const;
-  [[nodiscard]] dislua::uchar bcmax() const;
-  [[nodiscard]] auto bcopcode(size_t i) const;
-  [[nodiscard]] int get_mode(dislua::uchar opcode) const;
+    [[nodiscard]] bool          is_debug() const;
+    [[nodiscard]] dislua::uchar bcmax() const;
+    [[nodiscard]] auto          bcopcode(dislua::uchar opcode) const;
+    [[nodiscard]] int           get_mode(dislua::uchar opcode) const;
 
-  [[nodiscard]] std::string header_flags() const;
-  [[nodiscard]] std::string fix_string(std::string_view str) const;
-  [[nodiscard]] std::string varname(const dislua::varname &vn) const;
-  [[nodiscard]] std::string table_kv(const dislua::table_val_t &v) const;
-  std::string table(dislua::table_t t);
+    [[nodiscard]] std::string header_flags() const;
+    [[nodiscard]] std::string fix_string(std::string_view str) const;
+    [[nodiscard]] std::string varname(const dislua::varname &vn) const;
+    [[nodiscard]] std::string table_kv(const dislua::table_val_t &v) const;
+    std::string               table(dislua::table_t t);
 
 public:
-  explicit bclist_lj(dislua::dump_info *i) : bclist(i) {}
+    explicit bclist_lj(const dislua::dump_info &i) : bclist{i} {}
 
-  void update() override;
+    static inline const std::pair<std::string, int> unkopc = {"UNK", dislua::lj::bcmode::none};
+    static inline const std::string                 unkval = "invalid";
+
+    void update() override;
+
+private:
+    std::vector<size_t> temp_protos_id;
+
+    friend class bcproto_lj;
 };
 
 #endif // BCLIST_LJ_H

@@ -1,6 +1,6 @@
 // Luad - Disassembler for compiled Lua scripts.
 // https://github.com/imring/Luad
-// Copyright (C) 2021-2022 Vitaliy Vorobets
+// Copyright (C) 2021-2023 Vitaliy Vorobets
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,8 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifdef LUAD_WINDOWS
-#include "windows/console.hpp"
-#else
-inline void hide_console() {}
-#endif
+#ifndef LUAD_XREFMENU_HPP
+#define LUAD_XREFMENU_HPP
+
+#include <QTableWidget>
+
+#include "file.hpp"
+
+class Disassembler;
+
+class XrefMenu : public QTableWidget {
+    Q_OBJECT
+
+public:
+    XrefMenu(Disassembler *disasm, std::weak_ptr<File> file, std::size_t ref);
+
+    void update(std::size_t ref);
+
+public slots:
+    void jump(int row);
+
+private:
+    Disassembler       *disassembler;
+    std::weak_ptr<File> file;
+};
+
+#endif // LUAD_XREFMENU_HPP
