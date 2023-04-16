@@ -4,6 +4,7 @@ add_executable(luad
     "disassembler.cpp"
     "file.cpp"
     "functions.cpp"
+    "linehighlighter.cpp"
     "main.cpp"
     "mainwindow.cpp"
     "settings.cpp"

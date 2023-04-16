@@ -21,6 +21,7 @@
 #include <QPlainTextEdit>
 
 #include "file.hpp"
+#include "linehighlighter.hpp"
 #include "syntaxhighlighter.hpp"
 
 class LineNumberArea;
@@ -53,6 +54,8 @@ private slots:
 private:
     LineNumberArea    *lineNumberArea;
     SyntaxHighlighter *syntaxHighlighter;
+
+    LineHighlighter lineHighlighter;
 
     QMenu *contextMenu;
 
