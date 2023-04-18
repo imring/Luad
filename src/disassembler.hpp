@@ -39,6 +39,8 @@ public:
     bool jump(std::size_t addr, bool last = false);
     bool jump(std::string_view name);
 
+    std::size_t getCurrentAddress() const;
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
 

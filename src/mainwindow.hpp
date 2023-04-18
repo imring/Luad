@@ -20,6 +20,8 @@
 
 #include <QMainWindow>
 
+#include "qhexedit.h"
+
 #include "file.hpp"
 
 class XrefMenu;
@@ -48,6 +50,8 @@ private:
     QDockWidget *addDock(const QString &title, QWidget *widget, Qt::DockWidgetArea area = Qt::TopDockWidgetArea);
     void         removeDock(QDockWidget *&widget);
 
+    QHexEdit *addHexEditor();
+
     std::shared_ptr<File> file;
 
     QAction *closeFileAction = nullptr;
@@ -58,6 +62,7 @@ private:
     QDockWidget *functions    = nullptr;
     QDockWidget *variables    = nullptr;
     QDockWidget *xref         = nullptr;
+    QDockWidget *hexEditor    = nullptr;
 
     void readSettings();
     void writeSettings();

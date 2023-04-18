@@ -1,9 +1,9 @@
 # Luad
 
-Luad - Disassembler for compiled Lua scripts. At the moment the program is in development (v0.21-pre-alpha).
+Luad - Disassembler for compiled Lua scripts. At the moment the program is in development (v0.22-pre-alpha).
 
 # Screenshot
-![v0.21](./docs/assets/v0.21.png)
+![v0.22](./docs/assets/v0.21.png)
 
 # Features
 
@@ -12,9 +12,9 @@ Luad - Disassembler for compiled Lua scripts. At the moment the program is in de
     - [ ] Modify byte-code;
     - [x] Navigation with jumps/windows with functions or variables;
     - [x] Xrefs (external references);
-    - [ ] Custom line highlight.
-- [ ] Hex-editor
-    - [ ] Link to Disassembly.
+    - [x] Custom line highlight.
+- [x] Hex-editor
+    - [x] Link to Disassembly.
 - [ ] Plugins
 
 # Supported compilers
@@ -26,14 +26,16 @@ To build it you'll need:
 - [CMake](https://cmake.org/);
 
 You'll also need dependencies:
+- [Qt 6](https://www.qt.io/) (tested on 6.2.4);
 - [disluapp](https://github.com/imring/disluapp)*;
 - [{fmt}](https://github.com/fmtlib/fmt)*;
-- [Qt 6](https://www.qt.io/);
+- [qhexedit2](https://github.com/Simsys/qhexedit2)**;
 
-\* - is included in the project with [`FetchContent`](https://cmake.org/cmake/help/latest/module/FetchContent.html).
+\* - is included in the project with [`FetchContent`](https://cmake.org/cmake/help/latest/module/FetchContent.html).  
+\*\* - is included in the project with [`submodules`](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
 
 ```shell
-git clone https://github.com/imring/Luad
+git clone https://github.com/imring/Luad --recurse-submodules
 cd Luad
 cmake . -B build
 cmake --build build
@@ -44,3 +46,4 @@ The program is licensed under the [GNU General Public License v3.0](LICENSE).
 - disluapp is licensed under the [MIT License](https://github.com/imring/disluapp/blob/master/LICENSE).
 - {fmt} is licensed under the MIT License.
 - Qt is licensed under the [GNU Lesser General Public License (LGPL) v3.0](https://doc.qt.io/qt-6/lgpl.html).
+- qhexedit2 is licensed under the GNU Lesser General Public License (LGPL) v2.1.

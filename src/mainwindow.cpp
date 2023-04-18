@@ -60,6 +60,7 @@ void MainWindow::closeFile() {
     removeDock(variables);
     removeDock(functions);
     removeDock(disassembler);
+    removeDock(hexEditor);
     if (xref) {
         removeDock(xref);
     }
@@ -94,14 +95,40 @@ void MainWindow::jumpDialog() {
 
 void MainWindow::initializeDisassembler(std::weak_ptr<File> file) {
     Disassembler *disasm = new Disassembler{this, file};
-    disassembler         = addDock(tr("Disassembler"), disasm);
+    disassembler         = addDock(tr("Disassembler"), disasm, Qt::RightDockWidgetArea);
+    QHexEdit *hex        = addHexEditor();
+    hexEditor            = addDock(tr("Hex Editor"), hex, Qt::RightDockWidgetArea);
+    tabifyDockWidget(disassembler, hexEditor);
 
     Functions *funcs = new Functions{disasm, file};
-    functions        = addDock(tr("Functions"), funcs);
+    functions        = addDock(tr("Functions"), funcs, Qt::LeftDockWidgetArea);
     Variables *vars  = new Variables{disasm, file};
-    variables        = addDock(tr("Variables"), vars);
+    variables        = addDock(tr("Variables"), vars, Qt::LeftDockWidgetArea);
+    tabifyDockWidget(functions, variables);
 
     connect(disasm, &Disassembler::showXref, this, &MainWindow::showXref);
+
+    // disasm -> hex
+    connect(disasm, &Disassembler::cursorPositionChanged, [&] {
+        if (hexEditor->isVisible()) {
+            auto       hex    = static_cast<QHexEdit *>(hexEditor->widget());
+            const auto disasm = static_cast<Disassembler *>(disassembler->widget());
+            if (disasm && hex) {
+                // * 2 for byte jump
+                hex->setCursorPosition(disasm->getCurrentAddress() * 2);
+            }
+        }
+    });
+    // hex -> disasm
+    connect(hex, &QHexEdit::currentAddressChanged, [&](qint64 address) {
+        if (disassembler->isVisible()) {
+            if (auto disasm = static_cast<Disassembler *>(disassembler->widget())) {
+                if (address != disasm->getCurrentAddress()) {
+                    disasm->jump(address);
+                }
+            }
+        }
+    });
 }
 
 void MainWindow::showXref(const QString &name, XrefMenu *menu) {
@@ -156,6 +183,16 @@ void MainWindow::removeDock(QDockWidget *&widget) {
     viewMenu->removeAction(widget->toggleViewAction());
     removeDockWidget(widget);
     widget = nullptr;
+}
+
+QHexEdit *MainWindow::addHexEditor() {
+    const std::vector<dislua::uchar> bytes = file->dump_info->info.buf.copy_data();
+    QByteArray                       buffer(std::bit_cast<const char *>(bytes.data()), bytes.size());
+
+    QHexEdit *hexEdit = new QHexEdit{this};
+    hexEdit->setReadOnly(true);
+    hexEdit->setData(buffer);
+    return hexEdit;
 }
 
 // settings

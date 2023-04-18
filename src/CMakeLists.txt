@@ -18,7 +18,8 @@ target_compile_features(luad PRIVATE cxx_std_20)
 target_link_libraries(luad PRIVATE
     Qt${QT_VERSION}::Core
     Qt${QT_VERSION}::Widgets
-    bclist)
+    bclist
+    qhexedit2)
 target_compile_definitions(luad PUBLIC
     $<$<CONFIG:DEBUG>:DEBUG_MODE>
     $<$<CONFIG:RELEASE>:QT_NO_DEBUG_OUTPUT>

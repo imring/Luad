@@ -56,6 +56,7 @@ Disassembler::Disassembler(QWidget *parent, std::weak_ptr<File> file)
 
     setReadOnly(true);
     setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    setLineWrapMode(QPlainTextEdit::NoWrap);
 
     setTabStopDistance(40);
     // setTabStopDistance(fontMetrics().horizontalAdvance(QLatin1Char(' ')) * tabsize);
@@ -169,6 +170,15 @@ bool Disassembler::jump(std::string_view name) {
     QTextCursor cursor{document()->findBlockByNumber(l)};
     setTextCursor(cursor);
     return true;
+}
+
+std::size_t Disassembler::getCurrentAddress() const {
+    const int index = textCursor().block().blockNumber();
+    if (index < 0 || index >= lines.size()) {
+        return 0;
+    }
+    const auto currentLine = lines[index];
+    return currentLine.from;
 }
 
 void Disassembler::showContextMenu(const QPoint &pos) {
