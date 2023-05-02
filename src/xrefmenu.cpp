@@ -68,7 +68,7 @@ void XrefMenu::update(std::size_t ref) {
             addr->setFlags(addr->flags() & ~Qt::ItemIsEditable);
             setItem(i, 0, addr);
 
-            QTableWidgetItem *li = new QTableWidgetItem{QString::fromStdString(divs.lines[idx])};
+            QTableWidgetItem *li = new QTableWidgetItem{QString::fromStdString(divs.lines[idx].text)};
             li->setFlags(li->flags() & ~Qt::ItemIsEditable);
             setItem(i, 1, li);
 

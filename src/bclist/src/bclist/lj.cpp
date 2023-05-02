@@ -108,7 +108,7 @@ public:
     }
 
     [[nodiscard]] const dislua::proto &ref() const {
-        return parent->info.protos[proto_id];
+        return parent->info->protos[proto_id];
     }
     [[nodiscard]] std::string flags() const;
     [[nodiscard]] std::string fill_field(size_t i, int nfield);
@@ -193,19 +193,19 @@ size_t bclist_lj::table_size(dislua::table_t t) {
 }
 
 bool bclist_lj::is_debug() const {
-    return (info.header.flags & lj::dump_flags::strip) == 0;
+    return (info->header.flags & lj::dump_flags::strip) == 0;
 }
 
 dislua::uchar bclist_lj::bcmax() const {
-    if (info.version == 1)
+    if (info->version == 1)
         return lj::v1::bcops::BCMAX;
     return lj::v2::bcops::BCMAX;
 }
 
-auto bclist_lj::bcopcode(dislua::uchar opcode) const {
-    if (opcode > bcmax())
+const auto &bclist_lj::bcopcode(dislua::uchar opcode) const {
+    if (opcode >= bcmax())
         return unkopc;
-    const auto opcodes = info.version == 1 ? lj::v1::opcodes : lj::v2::opcodes;
+    const auto opcodes = info->version == 1 ? lj::v1::opcodes : lj::v2::opcodes;
     return opcodes[opcode];
 }
 
@@ -218,12 +218,12 @@ int bclist_lj::get_mode(dislua::uchar opcode) const {
 
 std::string bclist_lj::header_flags() const {
     std::string     res;
-    dislua::uleb128 flags = info.header.flags;
+    dislua::uleb128 flags = info->header.flags;
 
     add_flag(res, flags, lj::dump_flags::be, "BCDUMP_F_BE");
     add_flag(res, flags, lj::dump_flags::strip, "BCDUMP_F_STRIP");
     add_flag(res, flags, lj::dump_flags::ffi, "BCDUMP_F_FFI");
-    if (info.version == 2)
+    if (info->version == 2)
         add_flag(res, flags, lj::dump_flags::fr2, "BCDUMP_F_FR2");
     if (flags != 0)
         add_flag(res, flags);
@@ -506,10 +506,10 @@ std::string bcproto_lj::fill_field(size_t i, int nfield) {
         break;
     }
 
-    const std::string str_num = std::to_string(field);
-    if (res.empty())
-        return str_num;
-    return res + " (" + str_num + ")";
+    if (res.empty()) {
+        return std::to_string(field);
+    }
+    return fmt::format("{:s} ({:d})", res, field);
 }
 
 bclist::div bcproto_lj::ins() {
@@ -539,8 +539,8 @@ bclist::div bcproto_lj::ins() {
             parent->new_line(res, 0, "{:s}:", get_label(i));
         }
 
-        const std::string opcn = parent->bcopcode(ins.opcode).first;
-        std::string       fields, comment;
+        const std::string &opcn = parent->bcopcode(ins.opcode).first;
+        std::string        fields, comment;
         if (parent->is_debug() && ref().lineinfo[i] != prev_line) {
             prev_line = ref().lineinfo[i];
             comment   = fmt::format(" -- Line in source code: {:d}", prev_line);
@@ -560,7 +560,7 @@ bclist::div bcproto_lj::ins() {
             fields.append(field_d);
         }
 
-        parent->new_line(res, sizeof(dislua::uint), "({:02X} {:02X} {:02X} {:02X}) {:s}\t{:s}{:s}", ins.opcode, ins.a, ins.c, ins.b, opcn, fields, comment);
+        parent->new_line(res, std::to_string(i), sizeof(dislua::uint), "({:02X} {:02X} {:02X} {:02X}) {:s}\t{:s}{:s}", ins.opcode, ins.a, ins.c, ins.b, opcn, fields, comment);
     }
     res.empty_line();
 
@@ -599,7 +599,7 @@ bclist::div bcproto_lj::kgc() {
             parent->add_ref(parent->offset, refs->second);
         }
 
-        const dislua::kgc_t   kgc   = ref().kgc[i];
+        const dislua::kgc_t  &kgc   = ref().kgc[i];
         const dislua::uleb128 index = static_cast<dislua::uleb128>(kgc.index());
         const std::string val = std::visit(dislua::detail::overloaded{
             [&](const dislua::proto_id &id) -> std::string {
@@ -612,7 +612,8 @@ bclist::div bcproto_lj::kgc() {
             [](std::complex<double> v)      -> std::string { return fmt::format("({}+{}i)", v.real(), v.imag()); },
             [&](const std::string &str)     -> std::string { return parent->fix_string(str); }
         }, kgc);
-        parent->new_line(res, get_kgc(i, index), kgc_size(kgc), "{} = {}", get_kgc(i, index), val);
+        std::string kgc_index = get_kgc(i, index);
+        parent->new_line(res, kgc_index, kgc_size(kgc), "{} = {}", kgc_index, val);
     }
     res.empty_line();
 
@@ -710,28 +711,28 @@ void bclist_lj::update() {
     div compiler;
     compiler.empty_line(offset);
     new_line(compiler, 3, "-- Compiler: LuaJIT");
-    new_line(compiler, 1, "-- Version: {}", info.version);
+    new_line(compiler, 1, "-- Version: {}", info->version);
     compiler.empty_line();
     divs.add_div(compiler);
 
     div header;
     header.header = ".header";
 
-    if (dislua::uint flags = info.header.flags) {
+    if (dislua::uint flags = info->header.flags) {
         new_line(header, uleb128_size(flags), "flags = 0b{} -- {}", std::bitset<8>(flags).to_string(), header_flags());
     } else {
         new_line(header, 1, "flags = 0");
     }
 
     if (is_debug()) {
-        size_t s = info.header.debug_name.size();
-        new_line(header, uleb128_size(static_cast<dislua::uleb128>(s)) + s, "debug_name = \"{}\"", info.header.debug_name);
+        size_t s = info->header.debug_name.size();
+        new_line(header, uleb128_size(static_cast<dislua::uleb128>(s)) + s, "debug_name = \"{}\"", info->header.debug_name);
     }
 
     header.empty_line();
     divs.add_div(header);
 
-    for (size_t i = 0; i < info.protos.size(); ++i) {
+    for (size_t i = 0; i < info->protos.size(); ++i) {
         bcproto_lj p{this, i};
 
         divs.add_div(p());

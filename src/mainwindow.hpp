@@ -19,8 +19,10 @@
 #define LUAD_MAINWINDOW_HPP
 
 #include <QMainWindow>
+#include <qhexedit.h>
 
 #include "file.hpp"
+#include "plugins/plugins.hpp"
 
 class XrefMenu;
 
@@ -29,9 +31,13 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() = default;
+    ~MainWindow();
 
     void closeEvent(QCloseEvent *event) override;
+
+    void highlight(std::size_t from, std::size_t to, QColor color);
+
+    static MainWindow *instance();
 
 signals:
     void openFile(std::weak_ptr<File> file);
@@ -42,11 +48,15 @@ public slots:
     void jumpDialog();
     void initializeDisassembler(std::weak_ptr<File> file);
     void showXref(const QString &name, XrefMenu *menu);
+    void onMessage(std::string_view text);
 
 private:
     void         initializeMenubar();
     QDockWidget *addDock(const QString &title, QWidget *widget, Qt::DockWidgetArea area = Qt::TopDockWidgetArea);
     void         removeDock(QDockWidget *&widget);
+    QHexEdit    *addHexEditor();
+
+    QString logs;
 
     std::shared_ptr<File> file;
 
@@ -58,6 +68,8 @@ private:
     QDockWidget *functions    = nullptr;
     QDockWidget *variables    = nullptr;
     QDockWidget *xref         = nullptr;
+    QDockWidget *hexEditor    = nullptr;
+    QDockWidget *pluginLogs   = nullptr;
 
     void readSettings();
     void writeSettings();

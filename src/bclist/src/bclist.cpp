@@ -49,9 +49,9 @@ std::string bclist::div::string(bool from) const {
     std::string res;
     for (const bclist::div::line &l: onl.lines) {
         if (from) {
-            res += fmt::format("{:08X}: {}\n", l.from, l);
+            res += fmt::format("{:08X}: {}\n", l.from, l.text);
         } else {
-            res += l + '\n';
+            res += l.text + '\n';
         }
     }
     res.pop_back(); // remove last \n
@@ -60,51 +60,57 @@ std::string bclist::div::string(bool from) const {
 
 bclist::div bclist::div::only_lines() const {
     const bool already_done = header.empty() && footer.empty() && additional.empty() && tab == 0;
-    if (already_done)
+    if (already_done) {
         return *this;
+    }
 
-    const size_t      st = start(), en = end();
-    const std::string prev_tab(std::max(tab, size_t{1}) - 1, '\t'), cur_tab(tab, '\t');
+    const std::size_t st = start(), en = end();
+    const std::string prev_tab(std::max(tab, std::size_t{1}) - 1, '\t'), cur_tab(tab, '\t');
 
     std::vector<bclist::div::line> res;
-    static const auto              add_line = [](std::vector<bclist::div::line> &ls, const bclist::div::line &l, const std::string &t) {
-        for (const std::string &line: split(l, "\n"))
-            ls.emplace_back(t + line, l.from, l.to, l.key);
+    res.reserve(lines.size() + additional.size() * 10);
+    static const auto add_line = [](std::vector<bclist::div::line> &ls, const bclist::div::line &l, const std::string &t) {
+        for (std::string &line: split(l.text, "\n")) {
+            line.insert(0, t);
+            ls.emplace_back(std::move(line), l.from, l.to, l.key);
+        }
     };
 
-    if (!header.empty())
+    if (!header.empty()) {
         add_line(res, bclist::div::line{header, st, st, key}, prev_tab);
-    for (const bclist::div::line &line: lines)
+    }
+    for (const bclist::div::line &line: lines) {
         add_line(res, line, cur_tab);
+    }
     for (const div &add: additional) {
         const bclist::div &&onl = add.only_lines();
-        for (const bclist::div::line &line: onl.lines)
+        res.reserve(res.size() + onl.lines.size());
+        for (const bclist::div::line &line: onl.lines) {
             add_line(res, line, cur_tab);
+        }
     }
-    if (!footer.empty())
+    if (!footer.empty()) {
         add_line(res, bclist::div::line{footer, en, en}, prev_tab);
+    }
 
-    return bclist::div{.lines = res};
+    return bclist::div{.lines = std::move(res)};
 }
 
 bool bclist::div::empty() const {
-    if (!header.empty() || !footer.empty())
+    if (!header.empty() || !footer.empty()) {
         return false;
-
-    if (!lines.empty()) {
-        bool em = std::all_of(lines.begin(), lines.end(), [](const std::string &v) {
-            return v.empty();
-        });
-        if (!em)
-            return false;
     }
 
-    if (!additional.empty()) {
-        bool em = std::all_of(additional.begin(), additional.end(), [](const div &v) {
+    if (!lines.empty() && !std::all_of(lines.begin(), lines.end(), [](const line &v) {
+            return v.text.empty();
+        })) {
+        return false;
+    }
+
+    if (!additional.empty() && !std::all_of(additional.begin(), additional.end(), [](const div &v) {
             return v.empty();
-        });
-        if (!em)
-            return false;
+        })) {
+        return false;
     }
 
     return true;
@@ -142,13 +148,13 @@ void bclist::div::add_div(const bclist::div &d) {
 void bclist::add_ref(std::size_t key, std::size_t value) {
     auto it = refs.find(key);
     if (it == refs.end()) {
-        refs.emplace(key, std::vector<std::size_t>{ value });
+        refs.emplace(key, std::vector<std::size_t>{value});
     } else {
         it->second.push_back(value);
     }
 }
 
-void bclist::add_ref(std::size_t key, std::vector<std::size_t> values) {
+void bclist::add_ref(std::size_t key, const std::vector<std::size_t> &values) {
     auto it = refs.find(key);
     if (it == refs.end()) {
         refs.emplace(key, values);
@@ -161,6 +167,6 @@ void bclist::add_ref(std::size_t key, std::vector<std::size_t> values) {
 
 std::unique_ptr<bclist> bclist::get_list(const dislua::dump_info &info) {
     if (info.compiler() == dislua::compilers::luajit)
-        return std::make_unique<bclist_lj>(info);
-    return std::make_unique<bclist>(info);
+        return std::make_unique<bclist_lj>(new dislua::lj::parser{info});
+    return std::make_unique<bclist>(new dislua::dump_info{info});
 }

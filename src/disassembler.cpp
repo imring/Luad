@@ -30,7 +30,7 @@
 
 Disassembler::Disassembler(QWidget *parent, std::weak_ptr<File> file)
     : QPlainTextEdit{parent}, file{file}, lineNumberArea{new LineNumberArea{this}}, syntaxHighlighter{new SyntaxHighlighter{document()}},
-      contextMenu{new QMenu{"Context menu", this}} {
+      contextMenu{new QMenu{"Context menu", this}}, lineHighlighter{} {
     setContextMenuPolicy(Qt::CustomContextMenu);
 
     QFont fontText;
@@ -56,6 +56,7 @@ Disassembler::Disassembler(QWidget *parent, std::weak_ptr<File> file)
 
     setReadOnly(true);
     setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+    setLineWrapMode(QPlainTextEdit::NoWrap);
 
     setTabStopDistance(40);
     // setTabStopDistance(fontMetrics().horizontalAdvance(QLatin1Char(' ')) * tabsize);
@@ -64,6 +65,7 @@ Disassembler::Disassembler(QWidget *parent, std::weak_ptr<File> file)
     connect(this, &Disassembler::updateRequest, this, &Disassembler::updateLineNumberArea);
     connect(this, &Disassembler::cursorPositionChanged, this, &Disassembler::highlightCurrentLine);
     connect(this, &Disassembler::customContextMenuRequested, this, &Disassembler::showContextMenu);
+    connect(&lineHighlighter, &LineHighlighter::onAdded, this, &Disassembler::highlightCurrentLine);
 }
 
 int Disassembler::lineNumberAreaWidth() const {
@@ -117,17 +119,17 @@ void Disassembler::updateLineNumberAreaWidth(int /* newBlockCount */) {
 }
 
 void Disassembler::highlightCurrentLine() {
-    QList<QTextEdit::ExtraSelection> extraSelections;
-    QTextEdit::ExtraSelection        selection;
+    QTextEdit::ExtraSelection selection;
 
     const QColor lineColor = QColor(Qt::yellow).lighter(160);
     selection.format.setBackground(lineColor);
     selection.format.setProperty(QTextFormat::FullWidthSelection, true);
     selection.cursor = textCursor();
     selection.cursor.clearSelection();
-    extraSelections.append(selection);
 
-    setExtraSelections(extraSelections);
+    auto list = lineHighlighter.list();
+    list.append(selection);
+    setExtraSelections(list);
 }
 
 void Disassembler::updateLineNumberArea(const QRect &rect, int dy) {
@@ -157,7 +159,7 @@ bool Disassembler::jump(std::string_view name) {
         return false;
     }
 
-    size_t l = utils::line_by_addr(lines, it->second);
+    std::size_t l = utils::line_by_addr(lines, it->second);
     if (l == bclist::max_line) {
         return false;
     }
@@ -168,6 +170,29 @@ bool Disassembler::jump(std::string_view name) {
     QTextCursor cursor{document()->findBlockByNumber(l)};
     setTextCursor(cursor);
     return true;
+}
+
+void Disassembler::highlight(std::size_t from, std::size_t to, QColor color) {
+    std::size_t first  = utils::line_by_addr(lines, from);
+    std::size_t second = utils::line_by_addr(lines, to, true);
+    if (first == bclist::max_line || second == bclist::max_line) {
+        return;
+    }
+
+    QTextBlock  block = document()->findBlockByNumber(first);
+    QTextCursor cursor{block};
+    block = document()->findBlockByNumber(second);
+    cursor.setPosition(block.position() + block.length(), QTextCursor::KeepAnchor);
+    lineHighlighter.add(cursor, color);
+}
+
+std::size_t Disassembler::getCurrentAddress() const {
+    const int index = textCursor().block().blockNumber();
+    if (index < 0 || index >= lines.size()) {
+        return 0;
+    }
+    const auto currentLine = lines[index];
+    return currentLine.from;
 }
 
 void Disassembler::showContextMenu(const QPoint &pos) {
@@ -183,20 +208,23 @@ void Disassembler::showContextMenu(const QPoint &pos) {
     }
     const auto currentLine = lines[index];
 
-    QAction *actionCopy = nullptr, *actionAddress = nullptr, *actionGotoDef;
+    QAction *actionCopy = nullptr, *actionAddress = nullptr, *actionGotoDef = nullptr, *actionHighlight = nullptr;
     QAction *actionXref[2] = {nullptr, nullptr};
     if (!textCursor().selection().isEmpty()) {
         actionCopy = new QAction{"Copy", this};
         actionCopy->setShortcut(QKeySequence{Qt::CTRL | Qt::Key_C});
         contextMenu->addAction(actionCopy);
-        contextMenu->addSeparator();
     }
+
+    actionHighlight = new QAction{"Highlight line(s)", this};
+    contextMenu->addAction(actionHighlight);
+    contextMenu->addSeparator();
 
     actionAddress = new QAction{"Copy an address", this};
     contextMenu->addAction(actionAddress);
-    
+
     textCursor().select(QTextCursor::WordUnderCursor);
-    const QString word = textCursor().selectedText();
+    const QString     word    = textCursor().selectedText();
     const std::string stdword = word.toStdString();
     textCursor().clearSelection();
     bool hasWord = !word.isEmpty() && stdword != currentLine.key && addrKeys.find(stdword) != addrKeys.end();
@@ -223,10 +251,12 @@ void Disassembler::showContextMenu(const QPoint &pos) {
             QGuiApplication::clipboard()->setText(address);
         } else if (action == actionXref[0] || action == actionXref[1]) {
             const std::string current = action == actionXref[0] ? currentLine.key : stdword;
-            XrefMenu *menu = new XrefMenu{this, file, addrKeys.find(current)->second};
-            emit showXref(QStringLiteral("Xref for \"%1\"").arg(QString::fromStdString(current)), menu);
+            XrefMenu         *menu    = new XrefMenu{this, file, addrKeys.find(current)->second};
+            emit              showXref(QStringLiteral("Xref for \"%1\"").arg(QString::fromStdString(current)), menu);
         } else if (action == actionGotoDef) {
             jump(stdword);
+        } else if (action == actionHighlight) {
+            lineHighlighter.add(textCursor());
         }
     }
 }

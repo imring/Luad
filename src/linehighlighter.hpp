@@ -15,17 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <QApplication>
+#ifndef LUAD_LINEHIGHLIGHTER_HPP
+#define LUAD_LINEHIGHLIGHTER_HPP
 
-#include "mainwindow.hpp"
+#include <QTextEdit>
+#include <QTextCharFormat>
+#include <QRegularExpression>
 
-int main(int argc, char *argv[]) {
-    QCoreApplication::setOrganizationName("imring");
-    QCoreApplication::setOrganizationDomain("imring.dev");
-    QCoreApplication::setApplicationName("Luad");
+class LineHighlighter : public QObject {
+    Q_OBJECT
+public:
+    LineHighlighter() = default;
 
-    QApplication a{argc, argv};
-    MainWindow::instance()->show();
+    void add(QTextCursor cursor);
+    void add(QTextCursor cursor, QColor col);
 
-    return a.exec();
-}
+    QList<QTextEdit::ExtraSelection> list() const { return list_; }
+
+signals:
+    void onAdded();
+
+private:
+    QList<QTextEdit::ExtraSelection> list_;
+};
+
+#endif // LUAD_LINEHIGHLIGHTER_HPP

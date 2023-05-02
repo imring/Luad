@@ -21,6 +21,7 @@
 #include <QPlainTextEdit>
 
 #include "file.hpp"
+#include "linehighlighter.hpp"
 #include "syntaxhighlighter.hpp"
 
 class LineNumberArea;
@@ -38,6 +39,10 @@ public:
     bool jump(std::size_t addr, bool last = false);
     bool jump(std::string_view name);
 
+    void highlight(std::size_t from, std::size_t to, QColor color);
+
+    std::size_t getCurrentAddress() const;
+
 protected:
     void resizeEvent(QResizeEvent *event) override;
 
@@ -53,6 +58,8 @@ private slots:
 private:
     LineNumberArea    *lineNumberArea;
     SyntaxHighlighter *syntaxHighlighter;
+
+    LineHighlighter lineHighlighter;
 
     QMenu *contextMenu;
 

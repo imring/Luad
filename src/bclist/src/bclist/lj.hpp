@@ -30,7 +30,7 @@ protected:
 
     [[nodiscard]] bool          is_debug() const;
     [[nodiscard]] dislua::uchar bcmax() const;
-    [[nodiscard]] auto          bcopcode(dislua::uchar opcode) const;
+    [[nodiscard]] const auto   &bcopcode(dislua::uchar opcode) const;
     [[nodiscard]] int           get_mode(dislua::uchar opcode) const;
 
     [[nodiscard]] std::string header_flags() const;
@@ -40,7 +40,7 @@ protected:
     std::string               table(dislua::table_t t);
 
 public:
-    explicit bclist_lj(const dislua::dump_info &i) : bclist{i} {}
+    explicit bclist_lj(dislua::dump_info *i) : bclist{i} {}
 
     static inline const std::pair<std::string, int> unkopc = {"UNK", dislua::lj::bcmode::none};
     static inline const std::string                 unkval = "invalid";

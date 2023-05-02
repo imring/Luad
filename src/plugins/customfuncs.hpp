@@ -15,17 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include <QApplication>
+#ifndef LUAD_CUSTOMFUNCS_HPP
+#define LUAD_CUSTOMFUNCS_HPP
 
-#include "mainwindow.hpp"
+#include <sol/sol.hpp>
 
-int main(int argc, char *argv[]) {
-    QCoreApplication::setOrganizationName("imring");
-    QCoreApplication::setOrganizationDomain("imring.dev");
-    QCoreApplication::setApplicationName("Luad");
+#include "plugins.hpp"
 
-    QApplication a{argc, argv};
-    MainWindow::instance()->show();
+namespace LuaCustom {
+void initialize_dislua_types(sol::state &lua);
+void initialize_bclist_types(sol::state &lua);
+void initialize(LuaPlugin &plugin);
 
-    return a.exec();
+void print(LuaPlugin &plugin, const sol::variadic_args &args);
+void highlight(int from, int to, int color);
+// todo:
+// jump, highlight, addresses/lines/variables/bytes
+// on open file events
 }
+
+#endif // LUAD_CUSTOMFUNCS_HPP
