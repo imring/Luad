@@ -25,9 +25,7 @@ int main(int argc, char *argv[]) {
     QCoreApplication::setApplicationName("Luad");
 
     QApplication a{argc, argv};
-
-    MainWindow win;
-    win.show();
+    MainWindow::instance()->show();
 
     return a.exec();
 }

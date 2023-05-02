@@ -37,6 +37,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow{parent}, file{std::make_sh
     initializeMenubar();
 
     connect(this, &MainWindow::openFile, this, &MainWindow::initializeDisassembler);
+    connect(this, &MainWindow::openFile, LuaPluginManager::instance(), &LuaPluginManager::openFile);
+    connect(LuaPluginManager::instance(), &LuaPluginManager::onMessage, this, &MainWindow::onMessage);
+
+    LuaPluginManager::instance()->setParent(this);
+    LuaPluginManager::instance()->loadPlugins();
+}
+
+MainWindow::~MainWindow() {
+    disconnect(LuaPluginManager::instance(), &LuaPluginManager::onMessage, this, &MainWindow::onMessage);
 }
 
 void MainWindow::openFileDialog() {
@@ -48,11 +57,15 @@ void MainWindow::openFileDialog() {
         closeFileAction->setEnabled(true);
         jumpAction->setEnabled(true);
 
+        QFileInfo fi{path};
+        setWindowTitle(QString{"Luad - %1"}.arg(fi.fileName()));
+
         emit openFile(file);
     }
 }
 
 void MainWindow::closeFile() {
+    setWindowTitle("Luad");
     file->close();
     closeFileAction->setEnabled(false);
     jumpAction->setEnabled(false);
@@ -61,6 +74,7 @@ void MainWindow::closeFile() {
     removeDock(functions);
     removeDock(disassembler);
     removeDock(hexEditor);
+    removeDock(pluginLogs);
     if (xref) {
         removeDock(xref);
     }
@@ -129,6 +143,11 @@ void MainWindow::initializeDisassembler(std::weak_ptr<File> file) {
             }
         }
     });
+
+    QPlainTextEdit *logsEdit = new QPlainTextEdit{this};
+    logsEdit->setReadOnly(true);
+    logsEdit->setPlainText(logs);
+    pluginLogs = addDock(tr("Plugin logs"), logsEdit, Qt::RightDockWidgetArea);
 }
 
 void MainWindow::showXref(const QString &name, XrefMenu *menu) {
@@ -137,6 +156,18 @@ void MainWindow::showXref(const QString &name, XrefMenu *menu) {
         xref->setWindowTitle(name);
     } else {
         xref = addDock(name, menu);
+    }
+}
+
+void MainWindow::onMessage(std::string_view text) {
+    if (!logs.isEmpty()) {
+        logs.append('\n');
+    }
+    logs.append(QString::fromUtf8(text.data(), text.size()));
+
+    if (pluginLogs) {
+        auto logsEdit = qobject_cast<QPlainTextEdit *>(pluginLogs->widget());
+        logsEdit->setPlainText(logs);
     }
 }
 
@@ -186,7 +217,7 @@ void MainWindow::removeDock(QDockWidget *&widget) {
 }
 
 QHexEdit *MainWindow::addHexEditor() {
-    const std::vector<dislua::uchar> bytes = file->dump_info->info.buf.copy_data();
+    const std::vector<dislua::uchar> bytes = file->dump_info->info->buf.copy_data();
     QByteArray                       buffer(std::bit_cast<const char *>(bytes.data()), bytes.size());
 
     QHexEdit *hexEdit = new QHexEdit{this};
@@ -213,4 +244,16 @@ void MainWindow::writeSettings() {
 
 void MainWindow::closeEvent(QCloseEvent *event) {
     writeSettings();
+}
+
+void MainWindow::highlight(std::size_t from, std::size_t to, QColor color) {
+    Disassembler *disasm = qobject_cast<Disassembler *>(disassembler->widget());
+    if (disasm) {
+        disasm->highlight(from, to, color);
+    }
+}
+
+MainWindow *MainWindow::instance() {
+    static MainWindow singleton;
+    return &singleton;
 }

@@ -159,7 +159,7 @@ bool Disassembler::jump(std::string_view name) {
         return false;
     }
 
-    size_t l = utils::line_by_addr(lines, it->second);
+    std::size_t l = utils::line_by_addr(lines, it->second);
     if (l == bclist::max_line) {
         return false;
     }
@@ -170,6 +170,20 @@ bool Disassembler::jump(std::string_view name) {
     QTextCursor cursor{document()->findBlockByNumber(l)};
     setTextCursor(cursor);
     return true;
+}
+
+void Disassembler::highlight(std::size_t from, std::size_t to, QColor color) {
+    std::size_t first  = utils::line_by_addr(lines, from);
+    std::size_t second = utils::line_by_addr(lines, to, true);
+    if (first == bclist::max_line || second == bclist::max_line) {
+        return;
+    }
+
+    QTextBlock  block = document()->findBlockByNumber(first);
+    QTextCursor cursor{block};
+    block = document()->findBlockByNumber(second);
+    cursor.setPosition(block.position() + block.length(), QTextCursor::KeepAnchor);
+    lineHighlighter.add(cursor, color);
 }
 
 std::size_t Disassembler::getCurrentAddress() const {

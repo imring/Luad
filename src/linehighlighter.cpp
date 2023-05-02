@@ -26,7 +26,10 @@ void LineHighlighter::add(QTextCursor cursor) {
     if (!col.isValid()) {
         return;
     }
+    add(cursor, col);
+}
 
+void LineHighlighter::add(QTextCursor cursor, QColor col) {
     QTextEdit::ExtraSelection selection;
     selection.format.setBackground(col);
     selection.format.setProperty(QTextFormat::FullWidthSelection, true);

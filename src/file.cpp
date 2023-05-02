@@ -46,14 +46,14 @@ bool File::open(QString p) {
 }
 
 bool File::save() {
-    dump_info->info.write();
+    dump_info->info->write();
     QFile f{path};
     if (!f.open(QIODevice::WriteOnly)) {
         QMessageBox::warning(nullptr, "Warning", "Cannot open file: " + f.errorString());
         return false;
     }
 
-    const auto buf = dump_info->info.buf.copy_data();
+    const auto buf = dump_info->info->buf.copy_data();
     f.write(std::bit_cast<const char *>(buf.data()), buf.size());
     return true;
 }

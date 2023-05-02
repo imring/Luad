@@ -15,28 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef LUAD_LINEHIGHLIGHTER_HPP
-#define LUAD_LINEHIGHLIGHTER_HPP
+#ifndef LUAD_CUSTOMFUNCS_HPP
+#define LUAD_CUSTOMFUNCS_HPP
 
-#include <QTextEdit>
-#include <QTextCharFormat>
-#include <QRegularExpression>
+#include <sol/sol.hpp>
 
-class LineHighlighter : public QObject {
-    Q_OBJECT
-public:
-    LineHighlighter() = default;
+#include "plugins.hpp"
 
-    void add(QTextCursor cursor);
-    void add(QTextCursor cursor, QColor col);
+namespace LuaCustom {
+void initialize_dislua_types(sol::state &lua);
+void initialize_bclist_types(sol::state &lua);
+void initialize(LuaPlugin &plugin);
 
-    QList<QTextEdit::ExtraSelection> list() const { return list_; }
+void print(LuaPlugin &plugin, const sol::variadic_args &args);
+void highlight(int from, int to, int color);
+// todo:
+// jump, highlight, addresses/lines/variables/bytes
+// on open file events
+}
 
-signals:
-    void onAdded();
-
-private:
-    QList<QTextEdit::ExtraSelection> list_;
-};
-
-#endif // LUAD_LINEHIGHLIGHTER_HPP
+#endif // LUAD_CUSTOMFUNCS_HPP
