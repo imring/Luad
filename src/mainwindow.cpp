@@ -119,6 +119,7 @@ void MainWindow::initializeDisassembler(std::weak_ptr<File> file) {
     Variables *vars  = new Variables{disasm, file};
     variables        = addDock(tr("Variables"), vars, Qt::LeftDockWidgetArea);
     tabifyDockWidget(functions, variables);
+    resizeDocks({functions, variables}, {static_cast<int>(width() * 0.25), height()}, Qt::Horizontal);
 
     connect(disasm, &Disassembler::showXref, this, &MainWindow::showXref);
 
@@ -155,8 +156,11 @@ void MainWindow::showXref(const QString &name, XrefMenu *menu) {
         xref->setWidget(menu);
         xref->setWindowTitle(name);
     } else {
-        xref = addDock(name, menu);
+        xref = addDock(name, menu, Qt::RightDockWidgetArea);
+        tabifyDockWidget(disassembler, xref);
     }
+    xref->show();
+    xref->raise();
 }
 
 void MainWindow::onMessage(std::string_view text) {
