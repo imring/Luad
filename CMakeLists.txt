@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(Luad
-        VERSION 0.23
+        VERSION 0.24
         DESCRIPTION "Disassembler for compiled Lua scripts"
         LANGUAGES CXX)
 
