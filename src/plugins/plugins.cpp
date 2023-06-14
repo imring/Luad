@@ -36,7 +36,7 @@ LuaPlugin::~LuaPlugin() {
 
 bool LuaPlugin::run() {
     // load
-    sol::load_result load_result = state.load_file(path.string());
+    const sol::load_result load_result = state.load_file(path.string());
     bool result = valid_result(load_result);
     if (result) {
         // run
@@ -54,10 +54,9 @@ void LuaPluginManager::openFile(std::weak_ptr<File> f) {
     file = f;
 
     for (auto &plugin: plugins) {
-        const sol::protected_function &func = plugin->state["on_open_file"];
-        if (func.valid()) {
-            plugin->valid_result(func(file.lock()));
-        }
+        sol::protected_function func = plugin->state["on_open_file"];
+        sol::protected_function_result result = func(file.lock());
+        plugin->valid_result(result);
     }
 }
 
