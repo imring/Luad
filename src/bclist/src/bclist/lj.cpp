@@ -560,7 +560,7 @@ bclist::div bcproto_lj::ins() {
             fields.append(field_d);
         }
 
-        parent->new_line(res, std::to_string(i), sizeof(dislua::uint), "({:02X} {:02X} {:02X} {:02X}) {:s}\t{:s}{:s}", ins.opcode, ins.a, ins.c, ins.b, opcn, fields, comment);
+        parent->new_line(res, sizeof(dislua::uint), "({:02X} {:02X} {:02X} {:02X}) {:s}\t{:s}{:s}", ins.opcode, ins.a, ins.c, ins.b, opcn, fields, comment);
     }
     res.empty_line();
 

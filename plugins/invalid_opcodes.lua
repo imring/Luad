@@ -106,15 +106,28 @@ local function find_instructions(file, proto_id, instructions)
     local ins_id = 1
     for i, k in ipairs(proto:additional()) do
         if k.header == '.ins' then
-            for l, line in ipairs(k:lines()) do
-                if line.key == tostring(instructions[ins_id] - 1) then
+            local i, skip = 1, 0
+            local lines = k:lines()
+            while i ~= #lines do
+                if #lines[i].text == 0 then
+                    skip = skip + 2
+                    i = i + 2
+                elseif lines[i].text:sub(1, 5) == 'label' then
+                    skip = skip + 1
+                    i = i + 1
+                end
+
+                if i - skip == instructions[ins_id] then
                     ins_id = ins_id + 1
+                    local line = lines[i]
                     table.insert(result, { line.from, line.to })
 
                     if ins_id - 1 == #instructions then
                         goto label_result
                     end
                 end
+
+                i = i + 1
             end
             break
         end
