@@ -1,6 +1,6 @@
 # Luad
 
-Luad - Disassembler for compiled Lua scripts. At the moment the program is in development (v0.23-pre-alpha).
+Luad - Disassembler for compiled Lua scripts. At the moment the program is in development (v0.24-pre-alpha).
 
 # Screenshot
 ![v0.23](./docs/assets/v0.23.png)
