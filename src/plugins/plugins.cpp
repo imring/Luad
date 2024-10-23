@@ -93,6 +93,10 @@ void LuaPluginManager::loadPlugins() {
     constexpr std::string_view directory = "plugins";
     constexpr std::string_view extension = ".lua";
 
+    if (!fs::exists(directory) || !fs::is_directory(directory)) {
+        return;
+    }
+
     for (const auto &entry: fs::directory_iterator(directory)) {
         if (entry.is_regular_file() && entry.path().extension() == extension) {
             loadPlugin(entry.path());

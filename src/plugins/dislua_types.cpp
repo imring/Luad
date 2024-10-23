@@ -22,8 +22,8 @@
 template<typename T>
 sol::object convert_value(sol::state_view &lua, const T& value) {
     return std::visit([&lua](auto&& arg) -> sol::object {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+        using U = std::decay_t<decltype(arg)>;
+        if constexpr (std::is_same_v<U, std::nullptr_t>) {
             return sol::nil;
         }
         return sol::make_object(lua, arg);
