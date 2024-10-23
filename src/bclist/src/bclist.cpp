@@ -93,7 +93,9 @@ bclist::div bclist::div::only_lines() const {
         add_line(res, bclist::div::line{footer, en, en}, prev_tab);
     }
 
-    return bclist::div{.lines = std::move(res)};
+    bclist::div new_div{};
+    new_div.lines = std::move(res);
+    return new_div;
 }
 
 bool bclist::div::empty() const {

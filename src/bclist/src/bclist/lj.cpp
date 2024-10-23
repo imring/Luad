@@ -59,7 +59,7 @@ class bcproto_lj {
 
     std::map<std::size_t, std::vector<std::size_t>> temp_refs; // only uv/kgc/knum
 public:
-    explicit bcproto_lj(bclist_lj *list, size_t _proto) : parent{list}, proto_id{_proto} {}
+    explicit bcproto_lj(bclist_lj *list, size_t proto_id) : proto_id{proto_id}, parent{list} {}
 
     void add_temp_ref(std::size_t key, std::size_t value);
 
@@ -650,7 +650,9 @@ bclist::div bcproto_lj::knum() {
 }
 
 bclist::div bcproto_lj::operator()() {
-    bclist::div res = {.tab = 1, .footer = "end\n"};
+    bclist::div res;
+    res.tab = 1;
+    res.footer = "end\n";
     res.key = fmt::format("proto{}", proto_id);
     res.header = res.key + " do";
 

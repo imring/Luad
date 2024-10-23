@@ -4,12 +4,12 @@ set(DISLUA_TESTS   OFF)
 FetchContent_Declare(
     disluapp
     GIT_REPOSITORY https://github.com/imring/disluapp.git
-    GIT_TAG ec0c37303c1c72ee71adf93a51d13753ba053d1b # 1.1.3
+    GIT_TAG v1.1.4
 )
 FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG a33701196adfad74917046096bf5a2aa0ab0bb50 # 9.1.0
+    GIT_TAG 11.0.2
 )
 FetchContent_MakeAvailable(disluapp fmt)
 

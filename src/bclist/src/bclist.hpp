@@ -39,7 +39,7 @@ public:
     explicit bclist(dislua::dump_info *i, const options &op = options{}) : info{i}, option{op} {}
     virtual ~bclist() {
         delete info;
-    };
+    }
 
     struct div {
         struct line {
@@ -48,7 +48,7 @@ public:
             size_t      from;
             size_t      to;
 
-            explicit line(std::string_view text = {}, size_t from = 0, size_t to = 0, std::string_view key = {}) : text{text}, from{from}, to{to}, key{key} {}
+            explicit line(std::string_view text = {}, size_t from = 0, size_t to = 0, std::string_view key = {}) : text{text}, key{key}, from{from}, to{to} {}
         };
 
         std::string       key;
