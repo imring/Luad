@@ -18,9 +18,9 @@
 #ifndef LUAD_PLUGINS_HPP
 #define LUAD_PLUGINS_HPP
 
-#include <filesystem>
-
 #include <QObject>
+
+#include <filesystem>
 #include <sol/sol.hpp>
 
 #include "../file.hpp"
