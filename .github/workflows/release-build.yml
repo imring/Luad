@@ -65,6 +65,12 @@ jobs:
         target: 'desktop'
         arch: 'gcc_64'
 
+    - name: Set Lua paths
+      run: |
+        echo "LUA_DIR=${{ github.workspace }}/.lua" >> $GITHUB_ENV
+        echo "LUA_INCLUDE_DIR=${{ github.workspace }}/.lua/include" >> $GITHUB_ENV
+        echo "LUA_LIBRARIES=${{ github.workspace }}/.lua/lib" >> $GITHUB_ENV
+
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
