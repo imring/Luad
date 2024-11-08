@@ -31,7 +31,7 @@ const std::unordered_map<LuaPluginManager::MessageType, std::string> message_typ
 };
 
 LuaPlugin::~LuaPlugin() {
-    manager->message(LuaPluginManager::MessageType::Info, std::format("Unloading the plugin {}...", path.filename().string()));
+    manager->message(LuaPluginManager::MessageType::Info, fmt::format("Unloading the plugin {}...", path.filename().string()));
 }
 
 bool LuaPlugin::run() {
@@ -47,7 +47,7 @@ bool LuaPlugin::run() {
 }
 
 void LuaPlugin::message(std::string_view text) {
-    manager->message(LuaPluginManager::MessageType::Script, std::format("{}: {}", path.filename().string(), text));
+    manager->message(LuaPluginManager::MessageType::Script, fmt::format("{}: {}", path.filename().string(), text));
 }
 
 void LuaPluginManager::openFile(std::weak_ptr<File> f) {
@@ -67,7 +67,7 @@ void LuaPluginManager::message(MessageType type, std::string_view text) {
 }
 
 void LuaPluginManager::error(LuaPlugin *plugin, std::string_view reason) {
-    message(LuaPluginManager::MessageType::Error, std::format("Error running plugin {}: {}", plugin->path.filename().string(), reason));
+    message(LuaPluginManager::MessageType::Error, fmt::format("Error running plugin {}: {}", plugin->path.filename().string(), reason));
 
     plugins.remove_if([plugin](const std::shared_ptr<LuaPlugin> &p) {
         return p.get() == plugin;
@@ -78,7 +78,7 @@ bool LuaPluginManager::loadPlugin(std::filesystem::path path) {
     auto result  = std::make_shared<LuaPlugin>(this);
     result->path = path;
 
-    message(MessageType::Info, std::format("Loading plugin {}...", path.filename().string()));
+    message(MessageType::Info, fmt::format("Loading plugin {}...", path.filename().string()));
 
     const std::string spath = path.string();
     LuaCustom::initialize(*result);

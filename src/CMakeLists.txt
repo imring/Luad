@@ -41,3 +41,9 @@ target_compile_definitions(luad PUBLIC
     $<$<CONFIG:RELEASE>:QT_NO_DEBUG_OUTPUT>
 )
 target_include_directories(luad PRIVATE ${LUA_INCLUDE_DIR})
+
+set_target_properties(luad PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)

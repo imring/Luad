@@ -92,4 +92,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: build
-        path: ${{ steps.strings.outputs.build-output-dir }}/src/**/*.exe
+        path: |
+          ${{ steps.strings.outputs.build-output-dir }}/bin/
+          ${{ github.workspace }}/.lua/lib/
