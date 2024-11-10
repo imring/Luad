@@ -88,10 +88,13 @@ jobs:
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
+    - name: Copy binaries to artifact directory
+      run: |
+        cp -r ${{ github.workspace }}/.lua/lib ${{ steps.strings.outputs.build-output-dir }}/bin/
+        cp -r ${{ env.QT_ROOT_DIR }}/bin ${{ steps.strings.outputs.build-output-dir }}/bin/
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build-${{ matrix.os }}-${{ matrix.build_type }}
-        path: |
-          ${{ steps.strings.outputs.build-output-dir }}/bin/
-          ${{ github.workspace }}/.lua/lib/
+        path: ${{ steps.strings.outputs.build-output-dir }}/bin/
