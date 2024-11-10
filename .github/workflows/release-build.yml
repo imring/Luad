@@ -7,8 +7,6 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    env:
-      QT_VERSION: '6.2.4'
 
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
@@ -18,16 +16,13 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
         c_compiler: [gcc, cl]
-        arch: [win64_msvc2019_64, gcc_64]
         include:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-            arch: win64_msvc2019_64
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
-            arch: gcc_64
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -49,7 +44,6 @@ jobs:
       shell: bash
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-
     - name: Install Lua 5.4
       uses: leafo/gh-actions-lua@v10
       with:
@@ -60,22 +54,20 @@ jobs:
       uses: jurplel/install-qt-action@v4
       with:
         aqtversion: '==3.1.*'
-        version: ${{ env.QT_VERSION }}
+        version: '6.2.4'
         host: 'windows'
         target: 'desktop'
-        arch: ${{ matrix.arch }}
-        dir: ${{ github.workspace }}
+        arch: 'win64_msvc2019_64'
 
     - name: Install Qt (Linux)
       if: matrix.os == 'ubuntu-latest'
       uses: jurplel/install-qt-action@v4
       with:
         aqtversion: '==3.1.*'
-        version: ${{ env.QT_VERSION }}
+        version: '6.2.4'
         host: 'linux'
         target: 'desktop'
-        arch: ${{ matrix.arch }}
-        dir: ${{ github.workspace }}
+        arch: 'gcc_64'
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -90,7 +82,6 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -S ${{ github.workspace }}
-
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
@@ -98,8 +89,7 @@ jobs:
     - name: Copy binaries to artifact directory
       run: |
         cp -r ${{ github.workspace }}/.lua/lib ${{ steps.strings.outputs.build-output-dir }}/bin/
-        cp -r ${{ github.workspace }}/Qt/${{ env.QT_VERSION }}/${{ matrix.arch }}/bin ${{ steps.strings.outputs.build-output-dir }}/bin/
-
+        cp -r ${{ env.QT_ROOT_DIR }}/bin ${{ steps.strings.outputs.build-output-dir }}/bin/
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
